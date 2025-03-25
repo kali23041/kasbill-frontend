@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dashboard/analytics_section.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -64,27 +65,45 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
           
-          // Summary Cards
+          // Summary Cards - replaced with AnalyticsSection
+          AnalyticsSection(currencyFormat: currencyFormat),
+          
+          // Quick Actions
           Container(
             margin: const EdgeInsets.only(bottom: 24.0),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSummaryCard(
-                  context,
-                  title: 'Total Sales',
-                  value: currencyFormat.format(125780),
-                  icon: Icons.attach_money,
-                  color: Colors.green,
-                  change: '+8.5%',
+                const Text(
+                  'Quick Actions',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(width: 16),
-                _buildSummaryCard(
-                  context,
-                  title: 'Inventory Value',
-                  value: currencyFormat.format(543200),
-                  icon: Icons.diamond,
-                  color: Colors.amber.shade800,
-                  change: '+2.3%',
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildQuickActionCard(
+                      context,
+                      title: 'New Sale',
+                      icon: Icons.point_of_sale,
+                      color: Colors.blue,
+                    ),
+                    _buildQuickActionCard(
+                      context,
+                      title: 'Add Item',
+                      icon: Icons.add_circle_outline,
+                      color: Colors.purple,
+                    ),
+                    _buildQuickActionCard(
+                      context,
+                      title: 'New Loan',
+                      icon: Icons.monetization_on,
+                      color: Colors.teal,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -132,47 +151,6 @@ class DashboardPage extends StatelessWidget {
                   itemName: 'Gold Necklace',
                   date: 'Yesterday, 3:30 PM',
                   amount: currencyFormat.format(1850),
-                ),
-              ],
-            ),
-          ),
-          
-          // Quick Actions
-          Container(
-            margin: const EdgeInsets.only(bottom: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildQuickActionCard(
-                      context,
-                      title: 'New Sale',
-                      icon: Icons.point_of_sale,
-                      color: Colors.blue,
-                    ),
-                    _buildQuickActionCard(
-                      context,
-                      title: 'Add Item',
-                      icon: Icons.add_circle_outline,
-                      color: Colors.purple,
-                    ),
-                    _buildQuickActionCard(
-                      context,
-                      title: 'New Customer',
-                      icon: Icons.person_add,
-                      color: Colors.teal,
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -251,76 +229,6 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Summary card (Sales, Inventory, etc.)
-  Widget _buildSummaryCard(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required String change,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 2,
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-                Icon(icon, color: color, size: 20),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                change,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
