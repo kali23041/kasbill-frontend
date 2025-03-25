@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'terms_conditions_popup.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -20,6 +21,7 @@ class _SignupPageState extends State<SignupPage> {
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _acceptedTerms = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -151,6 +153,15 @@ class _SignupPageState extends State<SignupPage> {
     } catch (e) {
       print('Error storing user data: $e');
     }
+  }
+
+  void _showTermsAndConditions() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const TermsConditionsPopup(),
+    );
   }
 
   @override
@@ -378,6 +389,58 @@ class _SignupPageState extends State<SignupPage> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 16),
+                    
+                    // Terms and Conditions checkbox
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _acceptedTerms,
+                          onChanged: (value) {
+                            setState(() {
+                              _acceptedTerms = value ?? false;
+                            });
+                          },
+                          activeColor: Colors.amber.shade700,
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _acceptedTerms = !_acceptedTerms;
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'I accept the ',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                Text(
+                                  'Terms & Conditions',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.amber.shade800,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.info_outline,
+                                    size: 18,
+                                    color: Colors.amber.shade800,
+                                  ),
+                                  constraints: const BoxConstraints(),
+                                  padding: const EdgeInsets.only(left: 4),
+                                  onPressed: _showTermsAndConditions,
+                                  splashRadius: 20,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 30),
                     
                     // Sign Up button with shadow and rounded corners
@@ -394,7 +457,7 @@ class _SignupPageState extends State<SignupPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: _isLoading
+                        onPressed: _isLoading || !_acceptedTerms
                             ? null
                             : () {
                                 if (_formKey.currentState!.validate()) {
@@ -455,9 +518,10 @@ class _SignupPageState extends State<SignupPage> {
                 width: double.infinity,
                 height: 55,
                 child: OutlinedButton.icon(
-                  icon: Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
-                    height: 24,
+                  icon: Icon(
+                    Icons.g_mobiledata_rounded,
+                    size: 24,
+                    color: Colors.red.shade500,
                   ),
                   label: const Text(
                     'Continue with Google',
@@ -471,8 +535,10 @@ class _SignupPageState extends State<SignupPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    disabledForegroundColor: Colors.grey.shade400.withOpacity(0.38),
+                    disabledBackgroundColor: Colors.grey.shade200.withOpacity(0.12),
                   ),
-                  onPressed: _isLoading ? null : _signUpWithGoogle,
+                  onPressed: _isLoading || !_acceptedTerms ? null : _signUpWithGoogle,
                 ),
               ),
               

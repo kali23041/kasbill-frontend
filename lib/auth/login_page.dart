@@ -378,9 +378,10 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 55,
                 child: OutlinedButton.icon(
-                  icon: Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
-                    height: 24,
+                  icon: Icon(
+                    Icons.g_mobiledata_rounded,
+                    size: 24,
+                    color: Colors.red.shade500,
                   ),
                   label: const Text(
                     'Continue with Google',
