@@ -7,6 +7,7 @@ import 'dashboard/quick_actions_section.dart';
 import 'dashboard/recent_sales_section.dart';
 import 'dashboard/low_stock_section.dart';
 import 'dashboard/upcoming_orders_section.dart';
+import 'rates_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -15,29 +16,30 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveClientMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
+  // Static flag to track across all instances of dashboard
+  static bool _hasShownDialogThisSession = false;
+  
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // This should only be called when the app starts, not on every tab switch
-    if (!_hasShownDialog) {
-      _checkRatesUpdate();
-      _hasShownDialog = true;
-    }
-  }
+  bool get wantKeepAlive => true;
   
-  bool _hasShownDialog = false;
-  
-  // Replace initState with didChangeDependencies to ensure context is ready
   @override
   void initState() {
     super.initState();
-    // Remove the postFrameCallback to avoid showing on every tab change
+    // Only check for rates update if we haven't shown the dialog yet
+    if (!_hasShownDialogThisSession) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkRatesUpdate();
+      });
+    }
   }
   
   Future<void> _checkRatesUpdate() async {
+    // Skip if dialog already shown this app session
+    if (_hasShownDialogThisSession) return;
+    
     final User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null || currentUser.email == null) return;
     
@@ -50,7 +52,8 @@ class _DashboardPageState extends State<DashboardPage> {
           .get();
       
       // Only show the dialog if there are metals in the system
-      if (metalsSnapshot.docs.isNotEmpty && mounted) {
+      if (metalsSnapshot.docs.isNotEmpty && mounted && !_hasShownDialogThisSession) {
+        _hasShownDialogThisSession = true; // Set flag before showing dialog
         _showUpdateRatesDialog();
       }
     } catch (e) {
@@ -59,7 +62,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
   
   void _showUpdateRatesDialog() {
-    // Use shared preferences to check if we already showed dialog today
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -120,7 +122,9 @@ class _DashboardPageState extends State<DashboardPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Navigator.pushNamed(context, '/rates');
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const RatesPage()),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.amber.shade700,
@@ -138,6 +142,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     final User? currentUser = FirebaseAuth.instance.currentUser;
     final String userName = currentUser?.displayName ?? 'Jewelry Manager';
