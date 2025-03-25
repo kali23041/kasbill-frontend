@@ -535,6 +535,7 @@ class _BillsListPageState extends State<BillsListPage> {
                 }
                 
                 return ListView.builder(
+                  padding: const EdgeInsets.only(top: 8),
                   itemCount: filteredDocs.length,
                   itemBuilder: (context, index) {
                     final doc = filteredDocs[index];
@@ -557,7 +558,7 @@ class _BillsListPageState extends State<BillsListPage> {
                     final bool isSelected = _selectedBills.contains(invoiceNumber);
                     
                     return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
                       decoration: BoxDecoration(
                         color: isSelected ? Colors.amber.shade50 : Colors.white,
                         borderRadius: BorderRadius.circular(16),

@@ -63,23 +63,42 @@ class _LoansListPageState extends State<LoansListPage> {
     final String? userEmail = _auth.currentUser?.email;
     
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('All Loans'),
-        backgroundColor: Colors.amber.shade700,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'All Loans',
+          style: TextStyle(
+            color: Colors.amber.shade800,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.amber.shade800),
       ),
       body: Column(
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 80.0, 16.0, 16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search by customer name or item',
                 prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.amber.shade500, width: 2),
                 ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -92,6 +111,7 @@ class _LoansListPageState extends State<LoansListPage> {
                         },
                       )
                     : null,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               onChanged: (value) {
                 setState(() {
@@ -228,6 +248,7 @@ class _LoansListPageState extends State<LoansListPage> {
                 }
                 
                 return ListView.builder(
+                  padding: const EdgeInsets.only(top: 8),
                   itemCount: filteredDocs.length,
                   itemBuilder: (context, index) {
                     final doc = filteredDocs[index];
@@ -281,149 +302,161 @@ class _LoansListPageState extends State<LoansListPage> {
                     final List<dynamic> images = loan['item']?['images'] ?? [];
                     final bool hasImage = images.isNotEmpty;
                     
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 2,
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                      elevation: 2,
-                      child: InkWell(
-                        onTap: () {
-                          // Show loan details (To be implemented)
-                          _showLoanDetails(loan, loanId);
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Item image or placeholder
-                                  Container(
-                                    width: 60,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.grey.shade200,
-                                      image: hasImage
-                                          ? DecorationImage(
-                                              image: MemoryImage(
-                                                base64Decode(images.first.toString()),
-                                              ),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
-                                    ),
-                                    child: hasImage
-                                        ? null
-                                        : Icon(
-                                            Icons.image_not_supported,
-                                            color: Colors.grey.shade400,
-                                          ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  
-                                  // Customer and loan details
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                customerName,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () {
+                            // Show loan details
+                            _showLoanDetails(loan, loanId);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Item image or placeholder
+                                    Container(
+                                      width: 60,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.grey.shade200,
+                                        image: hasImage
+                                            ? DecorationImage(
+                                                image: MemoryImage(
+                                                  base64Decode(images.first.toString()),
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : null,
+                                      ),
+                                      child: hasImage
+                                          ? null
+                                          : Icon(
+                                              Icons.image_not_supported,
+                                              color: Colors.grey.shade400,
                                             ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    
+                                    // Customer and loan details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  customerName,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                              decoration: BoxDecoration(
-                                                color: statusColor.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(12),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: statusColor.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Text(
+                                                  status.toUpperCase(),
+                                                  style: TextStyle(
+                                                    color: statusColor,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
                                               ),
-                                              child: Text(
-                                                status.toUpperCase(),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            itemName,
+                                            style: TextStyle(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.calendar_today, 
+                                                size: 14, 
+                                                color: Colors.grey.shade600
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${dateFormat.format(startDate)} - ${dateFormat.format(endDate)}',
                                                 style: TextStyle(
-                                                  color: statusColor,
-                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 12,
+                                                  color: Colors.grey.shade600,
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          itemName,
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
+                                            ],
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.calendar_today, 
-                                              size: 14, 
-                                              color: Colors.grey.shade600
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '${dateFormat.format(startDate)} - ${dateFormat.format(endDate)}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const Divider(height: 24),
-                              
-                              // Loan amounts
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _buildAmountColumn(
-                                    'Principal', 
-                                    currencyFormat.format(loanAmount),
-                                    Icons.attach_money,
-                                    Colors.amber.shade700,
-                                  ),
-                                  _buildAmountColumn(
-                                    'Interest (${interestRate.toStringAsFixed(1)}%)', 
-                                    currencyFormat.format(interestAmount),
-                                    Icons.trending_up,
-                                    Colors.green.shade700,
-                                  ),
-                                  _buildAmountColumn(
-                                    'Total', 
-                                    currencyFormat.format(totalAmount),
-                                    Icons.account_balance_wallet,
-                                    Colors.purple.shade700,
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                                const Divider(height: 24),
+                                
+                                // Loan amounts
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _buildAmountColumn(
+                                      'Principal', 
+                                      currencyFormat.format(loanAmount),
+                                      Icons.attach_money,
+                                      Colors.amber.shade700,
+                                    ),
+                                    _buildAmountColumn(
+                                      'Interest (${interestRate.toStringAsFixed(1)}%)', 
+                                      currencyFormat.format(interestAmount),
+                                      Icons.trending_up,
+                                      Colors.green.shade700,
+                                    ),
+                                    _buildAmountColumn(
+                                      'Total', 
+                                      currencyFormat.format(totalAmount),
+                                      Icons.account_balance_wallet,
+                                      Colors.purple.shade700,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
