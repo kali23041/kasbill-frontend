@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_profile_page.dart';
+import 'change_password_page.dart';
+import 'rates_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -239,8 +241,49 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSettingItem(
                       icon: Icons.lock_outline,
                       title: 'Change Password',
+                      onTap: () async {
+                        // Check if user is logged in with email/password
+                        User? currentUser = _auth.currentUser;
+                        final List<String> providers = [];
+                        
+                        if (currentUser != null && currentUser.email != null) {
+                          final providerData = await _auth.fetchSignInMethodsForEmail(currentUser.email!);
+                          providers.addAll(providerData);
+                        }
+                        
+                        // Only show change password page if user uses email/password auth
+                        if (providers.contains('password')) {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ChangePasswordPage()),
+                          );
+                          
+                          // If password was changed successfully, you might want to handle it
+                          if (result == true) {
+                            // Option: Show a success message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Password changed successfully')),
+                            );
+                          }
+                        } else {
+                          // Show a message that this option is not available for social logins
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('This option is only available for email/password accounts'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    _buildSettingItem(
+                      icon: Icons.attach_money,
+                      title: 'Rates',
                       onTap: () {
-                        // Show change password dialog
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RatesPage()),
+                        );
                       },
                     ),
                   ],
