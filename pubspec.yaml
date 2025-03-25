@@ -44,6 +44,7 @@ dependencies:
   firebase_messaging: ^14.7.20
   google_sign_in: ^6.2.1
   intl: ^0.18.1
+  image_picker: ^1.0.0  # Or the latest version
 
 dev_dependencies:
   flutter_test:

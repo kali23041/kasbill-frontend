@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 class AddProductPage extends StatefulWidget {
-  const AddProductPage({super.key});
+  final String? editProductId;
+  
+  const AddProductPage({super.key, this.editProductId});
 
   @override
   State<AddProductPage> createState() => _AddProductPageState();
@@ -56,6 +62,9 @@ class _AddProductPageState extends State<AddProductPage> {
   
   final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
   
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploadingImage = false;
+  
   @override
   void initState() {
     super.initState();
@@ -67,6 +76,11 @@ class _AddProductPageState extends State<AddProductPage> {
     _otherChargesController.addListener(_calculatePrice);
     _discountController.addListener(_calculatePrice);
     _quantityController.addListener(_calculatePrice);
+    
+    // Load product data if editing an existing product
+    if (widget.editProductId != null) {
+      _loadProductData();
+    }
   }
   
   @override
@@ -353,6 +367,37 @@ class _AddProductPageState extends State<AddProductPage> {
     });
   }
 
+  Future<void> _loadProductData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser != null && currentUser.email != null) {
+        final doc = await _firestore
+            .collection('users')
+            .doc(currentUser.email)
+            .collection('products')
+            .doc(widget.editProductId)
+            .get();
+            
+        if (doc.exists) {
+          final productData = doc.data() as Map<String, dynamic>;
+          _editProduct(widget.editProductId!, productData);
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load product: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     User? currentUser = _auth.currentUser;
@@ -514,6 +559,96 @@ class _AddProductPageState extends State<AddProductPage> {
                 ],
               ),
             ),
+          
+          // Images Section - moved to start of form and simplified
+          Text(
+            'Product Image',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Simplified image picker
+          Row(
+            children: [
+              if (_productImages.isNotEmpty)
+                Expanded(
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: MemoryImage(
+                          base64Decode(_productImages.first),
+                        ),
+                        fit: BoxFit.cover,
+                      ),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.image,
+                        size: 40,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 12),
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: _isUploadingImage ? null : _pickImage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade600,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                    ),
+                    child: _isUploadingImage
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Select Image'),
+                  ),
+                  if (_productImages.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _productImages.clear();
+                        });
+                      },
+                      icon: Icon(Icons.delete, color: Colors.red.shade600, size: 18),
+                      label: Text(
+                        'Remove',
+                        style: TextStyle(color: Colors.red.shade600),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           
           // Basic Info Section
           Text(
@@ -1152,8 +1287,79 @@ class _AddProductPageState extends State<AddProductPage> {
             ),
           ),
           const SizedBox(height: 16),
+          
+          // Add this section after the Weight & Quantity section, before Pricing
+          const SizedBox(height: 24),
         ],
       ),
     );
+  }
+  
+  // Add a different image picker method using File IO
+  Future<void> _pickImage() async {
+    try {
+      setState(() {
+        _isUploadingImage = true;
+      });
+
+      // Show a simple dialog to choose camera or gallery
+      final source = await showDialog<ImageSource>(
+        context: context,
+        builder: (BuildContext context) {
+          return SimpleDialog(
+            title: const Text('Select Image Source'),
+            children: <Widget>[
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, ImageSource.camera),
+                child: const Text('Camera'),
+              ),
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, ImageSource.gallery),
+                child: const Text('Gallery'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (source == null) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+        return;
+      }
+
+      final pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 70,
+      );
+
+      if (pickedFile != null) {
+        final File imageFile = File(pickedFile.path);
+        final List<int> imageBytes = await imageFile.readAsBytes();
+        final String base64Image = base64Encode(imageBytes);
+        
+        setState(() {
+          _productImages.add(base64Image);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+      }
+    }
   }
 } 
