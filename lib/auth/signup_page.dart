@@ -96,7 +96,10 @@ class _SignupPageState extends State<SignupPage> {
         _errorMessage = null;
       });
 
-      // Trigger Google sign-in flow
+      // Configure Google Sign In to show account selection prompt every time
+      _googleSignIn.signOut(); // Sign out first to force account selection
+      
+      // Trigger Google sign-in flow with a prompt parameter
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -106,19 +109,16 @@ class _SignupPageState extends State<SignupPage> {
         return;
       }
       
-      // Obtain auth details
+      // Rest of the method stays the same
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       
-      // Create credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
       
-      // Sign in with Firebase using the credential
       UserCredential userCredential = await _auth.signInWithCredential(credential);
       
-      // Store user info in Firestore if it's a new user
       if (userCredential.additionalUserInfo?.isNewUser ?? false) {
         await _storeUserInfo(userCredential.user!);
       }
@@ -144,6 +144,7 @@ class _SignupPageState extends State<SignupPage> {
         'displayName': user.displayName ?? _nameController.text.trim(),
         'photoURL': user.photoURL ?? '',
         'phoneNumber': user.phoneNumber ?? '',
+        'membership': 'free',
         'createdAt': FieldValue.serverTimestamp(),
         'lastLogin': FieldValue.serverTimestamp(),
       });

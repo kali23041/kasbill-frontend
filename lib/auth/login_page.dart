@@ -84,6 +84,9 @@ class _LoginPageState extends State<LoginPage> {
         _errorMessage = null;
       });
 
+      // Force account selection by signing out first
+      _googleSignIn.signOut();
+      
       // Trigger Google sign-in flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
