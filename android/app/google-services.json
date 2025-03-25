@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "174995240247",
+    "project_id": "kasbill-19baf",
+    "storage_bucket": "kasbill-19baf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:174995240247:android:c5729f0931403ab5a796b2",
+        "android_client_info": {
+          "package_name": "com.kasbills.kasbill"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlguULYAcceditt-dAMAtiszzMSGPqzlI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
