@@ -42,6 +42,7 @@ dependencies:
   firebase_storage: ^11.6.10
   cloud_firestore: ^4.15.9
   firebase_messaging: ^14.7.20
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -95,3 +96,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  # Remove or comment out this section if you have no other assets
+  # assets:
+  #   - assets/google_logo.png
