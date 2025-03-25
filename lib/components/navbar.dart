@@ -31,6 +31,10 @@ class Navbar extends StatelessWidget {
           icon: Icon(Icons.people),
           label: 'Customers',
         ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings),
+          label: 'Settings',
+        ),
       ],
       currentIndex: selectedIndex,
       selectedItemColor: Colors.amber,

@@ -5,6 +5,7 @@ import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
 import 'pages/billing_page.dart';
 import 'pages/customers_page.dart';
+import 'pages/settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,19 +24,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _signOut() async {
-    try {
-      await _auth.signOut();
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error signing out: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // List of pages to display based on navigation bar selection
@@ -44,20 +32,13 @@ class _HomePageState extends State<HomePage> {
       const InventoryPage(),
       const BillingPage(),
       const CustomersPage(),
+      const SettingsPage(),
     ];
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Jewelry Management'),
-        backgroundColor: Colors.amber,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _signOut,
-          ),
-        ],
+      body: SafeArea(
+        child: pages[_selectedIndex],
       ),
-      body: pages[_selectedIndex],
       bottomNavigationBar: Navbar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
