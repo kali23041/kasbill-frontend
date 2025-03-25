@@ -7,7 +7,7 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
+    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     final User? currentUser = FirebaseAuth.instance.currentUser;
     final String userName = currentUser?.displayName ?? 'Jewelry Manager';
     
