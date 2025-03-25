@@ -23,6 +23,10 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
   bool _isEditing = false;
   String? _editingCategoryId;
   
+  // Add search controller
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  
   @override
   void dispose() {
     _categoryNameController.dispose();
@@ -30,6 +34,7 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
     for (var controller in _subCategoryControllers) {
       controller.dispose();
     }
+    _searchController.dispose(); // Dispose search controller
     super.dispose();
   }
   
@@ -556,6 +561,48 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
               ),
               const SizedBox(height: 24),
               
+              // Search Bar
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search categories...',
+                    prefixIcon: Icon(Icons.search, color: Colors.purple.shade300),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.trim().toLowerCase();
+                    });
+                  },
+                ),
+              ),
+              
               // Category list section title
               currentUser != null && currentUser.email != null
                 ? StreamBuilder<QuerySnapshot>(
@@ -638,14 +685,69 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                           );
                         }
                         
-                        final categories = snapshot.data!.docs;
+                        // Filter categories based on search query
+                        final allCategories = snapshot.data!.docs;
+                        final filteredCategories = _searchQuery.isEmpty
+                            ? allCategories
+                            : allCategories.where((doc) {
+                                final category = doc.data() as Map<String, dynamic>;
+                                final name = category['name']?.toString().toLowerCase() ?? '';
+                                final description = category['description']?.toString().toLowerCase() ?? '';
+                                
+                                // Search in subcategories too
+                                bool matchesSubcategory = false;
+                                final subcategories = category['subcategories'] as List<dynamic>?;
+                                if (subcategories != null) {
+                                  for (var sub in subcategories) {
+                                    if (sub.toString().toLowerCase().contains(_searchQuery)) {
+                                      matchesSubcategory = true;
+                                      break;
+                                    }
+                                  }
+                                }
+                                
+                                return name.contains(_searchQuery) || 
+                                       description.contains(_searchQuery) ||
+                                       matchesSubcategory;
+                              }).toList();
+                        
+                        if (filteredCategories.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 70,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No matching categories',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Try a different search term',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
                         
                         return ListView.builder(
                           padding: EdgeInsets.zero,
-                          itemCount: categories.length,
+                          itemCount: filteredCategories.length,
                           itemBuilder: (context, index) {
-                            final category = categories[index].data() as Map<String, dynamic>;
-                            final categoryId = categories[index].id;
+                            final category = filteredCategories[index].data() as Map<String, dynamic>;
+                            final categoryId = filteredCategories[index].id;
                             final subcategories = category['subcategories'] as List<dynamic>?;
                             
                             return Container(
