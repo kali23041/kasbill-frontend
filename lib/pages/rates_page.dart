@@ -59,6 +59,16 @@ class _RatesPageState extends State<RatesPage> {
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'This will update the metal rate and all products using this metal.',
+              style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
         actions: [
@@ -84,6 +94,11 @@ class _RatesPageState extends State<RatesPage> {
               final String? userEmail = _auth.currentUser?.email;
               if (userEmail != null) {
                 try {
+                  // Show progress dialog
+                  Navigator.of(context).pop();
+                  _showProgressDialog('Updating rates...');
+                  
+                  // 1. Update metal rate
                   await _firestore
                     .collection('users')
                     .doc(userEmail)
@@ -93,16 +108,66 @@ class _RatesPageState extends State<RatesPage> {
                       'rate': newRate,
                       'updatedAt': FieldValue.serverTimestamp(),
                     });
+                  
+                  // 2. Get all products with this metal
+                  final productsSnapshot = await _firestore
+                    .collection('users')
+                    .doc(userEmail)
+                    .collection('products')
+                    .where('metal.id', isEqualTo: metalId)
+                    .get();
+                  
+                  // 3. Update each product price
+                  int updatedProductsCount = 0;
+                  for (final doc in productsSnapshot.docs) {
+                    final product = doc.data();
+                    final weight = (product['weight'] as num).toDouble();
+                    final makingCharge = (product['makingCharge'] as num).toDouble();
+                    final otherCharges = (product['otherCharges'] as num).toDouble();
+                    final discount = (product['discount'] as num).toDouble();
+                    final quantity = (product['quantity'] as num).toInt();
                     
-                  Navigator.of(context).pop();
+                    // Calculate new prices
+                    double metalCost = weight * newRate;
+                    double makingCost = (makingCharge * metalCost) / 100;
+                    double totalBeforeDiscount = metalCost + makingCost + otherCharges;
+                    double discountAmount = (discount * totalBeforeDiscount) / 100;
+                    double singleItemPrice = totalBeforeDiscount - discountAmount;
+                    double totalPrice = singleItemPrice * quantity;
+                    
+                    // Update product
+                    await _firestore
+                      .collection('users')
+                      .doc(userEmail)
+                      .collection('products')
+                      .doc(doc.id)
+                      .update({
+                        'metal.rate': newRate,
+                        'unitPrice': singleItemPrice,
+                        'totalPrice': totalPrice,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
+                    
+                    updatedProductsCount++;
+                  }
+                  
+                  // Dismiss progress dialog
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
                   
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Rate updated successfully'),
+                    SnackBar(
+                      content: Text('Rate updated successfully. Updated $updatedProductsCount products.'),
                       backgroundColor: Colors.green,
                     ),
                   );
                 } catch (e) {
+                  // Dismiss progress dialog
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Failed to update rate: $e'),
@@ -122,6 +187,114 @@ class _RatesPageState extends State<RatesPage> {
       ),
     );
   }
+  
+  void _showProgressDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(color: Colors.amber.shade700),
+              const SizedBox(width: 20),
+              Text(message),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _updateAllProductRates() async {
+    final String? userEmail = _auth.currentUser?.email;
+    if (userEmail == null) return;
+    
+    try {
+      _showProgressDialog('Updating all products...');
+      
+      // Get all metals
+      final metalsSnapshot = await _firestore
+          .collection('users')
+          .doc(userEmail)
+          .collection('metals')
+          .get();
+      
+      int totalUpdatedProducts = 0;
+      
+      // For each metal, update all related products
+      for (final metalDoc in metalsSnapshot.docs) {
+        final metal = metalDoc.data();
+        final metalId = metalDoc.id;
+        final metalRate = (metal['rate'] as num).toDouble();
+        
+        // Get products for this metal
+        final productsSnapshot = await _firestore
+          .collection('users')
+          .doc(userEmail)
+          .collection('products')
+          .where('metal.id', isEqualTo: metalId)
+          .get();
+        
+        // Update each product
+        for (final productDoc in productsSnapshot.docs) {
+          final product = productDoc.data();
+          final weight = (product['weight'] as num).toDouble();
+          final makingCharge = (product['makingCharge'] as num).toDouble();
+          final otherCharges = (product['otherCharges'] as num).toDouble();
+          final discount = (product['discount'] as num).toDouble();
+          final quantity = (product['quantity'] as num).toInt();
+          
+          // Calculate new prices
+          double metalCost = weight * metalRate;
+          double makingCost = (makingCharge * metalCost) / 100;
+          double totalBeforeDiscount = metalCost + makingCost + otherCharges;
+          double discountAmount = (discount * totalBeforeDiscount) / 100;
+          double singleItemPrice = totalBeforeDiscount - discountAmount;
+          double totalPrice = singleItemPrice * quantity;
+          
+          // Update product
+          await _firestore
+            .collection('users')
+            .doc(userEmail)
+            .collection('products')
+            .doc(productDoc.id)
+            .update({
+              'metal.rate': metalRate,
+              'unitPrice': singleItemPrice,
+              'totalPrice': totalPrice,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          
+          totalUpdatedProducts++;
+        }
+      }
+      
+      // Dismiss progress dialog
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Updated prices for $totalUpdatedProducts products'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Dismiss progress dialog
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update product rates: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +313,16 @@ class _RatesPageState extends State<RatesPage> {
           ),
         ),
         iconTheme: IconThemeData(color: Colors.amber.shade800),
+        actions: [
+          TextButton.icon(
+            onPressed: _updateAllProductRates,
+            icon: Icon(Icons.update, color: Colors.amber.shade800),
+            label: Text(
+              'Update All Products',
+              style: TextStyle(color: Colors.amber.shade800),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
