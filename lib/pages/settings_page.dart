@@ -4,6 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_profile_page.dart';
 import 'change_password_page.dart';
 import 'rates_page.dart';
+import 'settings/upgrade_to_premium_page.dart';
+import 'settings/language_page.dart';
+import 'settings/help_center_page.dart';
+import 'settings/about_page.dart';
+import 'settings/feedback_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -235,7 +240,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: Icons.workspace_premium,
                       title: 'Upgrade to Premium',
                       onTap: () {
-                        // Navigate to premium page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const UpgradeToPremiumPage()),
+                        );
                       },
                     ),
                     _buildSettingItem(
@@ -300,22 +308,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       title: 'Language',
                       subtitle: 'English',
                       onTap: () {
-                        // Show language options
-                      },
-                    ),
-                    _buildSettingItem(
-                      icon: Icons.notifications_outlined,
-                      title: 'Notifications',
-                      onTap: () {
-                        // Navigate to notification settings
-                      },
-                    ),
-                    _buildSettingItem(
-                      icon: Icons.color_lens_outlined,
-                      title: 'Theme',
-                      subtitle: 'Light',
-                      onTap: () {
-                        // Show theme options
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LanguagePage()),
+                        );
                       },
                     ),
                   ],
@@ -331,21 +327,30 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: Icons.help_outline,
                       title: 'Help Center',
                       onTap: () {
-                        // Navigate to help center
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const HelpCenterPage()),
+                        );
                       },
                     ),
                     _buildSettingItem(
                       icon: Icons.info_outline,
                       title: 'About',
                       onTap: () {
-                        // Show about dialog
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AboutPage()),
+                        );
                       },
                     ),
                     _buildSettingItem(
                       icon: Icons.feedback_outlined,
                       title: 'Feedback',
                       onTap: () {
-                        // Show feedback form
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const FeedbackPage()),
+                        );
                       },
                     ),
                   ],

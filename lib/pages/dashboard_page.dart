@@ -30,8 +30,8 @@ class DashboardPage extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Good Morning,',
+                    Text(
+                      'Kasbill By Kartik Sabale',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
@@ -82,7 +82,7 @@ class DashboardPage extends StatelessWidget {
           const LowStockSection(),
           
           // Upcoming Orders - replaced with UpcomingOrdersSection
-          const UpcomingOrdersSection(),
+          // const UpcomingOrdersSection(),
         ],
       ),
     );

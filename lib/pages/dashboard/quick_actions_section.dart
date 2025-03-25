@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../billing_page.dart';
 import '../inventory/add_product_page.dart';
+import '../loans/loan_page.dart';
 
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
@@ -53,12 +54,9 @@ class QuickActionsSection extends StatelessWidget {
                 icon: Icons.monetization_on,
                 color: Colors.teal,
                 onTap: () {
-                  // Future loan feature
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Loan feature coming soon!'),
-                      duration: Duration(seconds: 2),
-                    ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoanPage()),
                   );
                 },
               ),

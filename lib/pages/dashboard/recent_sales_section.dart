@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../billing/bills_list_page.dart';
+import '../billing/bill_details_sheet.dart';
 
 class RecentSalesSection extends StatelessWidget {
   final NumberFormat currencyFormat;
@@ -11,6 +15,11 @@ class RecentSalesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    final String? userEmail = _auth.currentUser?.email;
+    final dateFormat = DateFormat('dd MMM, hh:mm a');
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 24.0),
       child: Column(
@@ -28,7 +37,10 @@ class RecentSalesSection extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  // Navigate to detailed sales page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const BillsListPage()),
+                  );
                 },
                 child: Text(
                   'View All',
@@ -40,18 +52,116 @@ class RecentSalesSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildRecentSaleCard(
-            customerName: 'John Smith',
-            itemName: 'Diamond Ring',
-            date: 'Today, 10:45 AM',
-            amount: currencyFormat.format(3250),
-          ),
-          const SizedBox(height: 12),
-          _buildRecentSaleCard(
-            customerName: 'Sarah Johnson',
-            itemName: 'Gold Necklace',
-            date: 'Yesterday, 3:30 PM',
-            amount: currencyFormat.format(1850),
+          
+          StreamBuilder<QuerySnapshot>(
+            stream: _firestore
+                .collection('users')
+                .doc(userEmail)
+                .collection('bills')
+                .orderBy('date', descending: true)
+                .limit(3)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              }
+              
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 2,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.receipt_long,
+                          size: 40,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No sales recorded yet',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              
+              return Column(
+                children: snapshot.data!.docs.map((doc) {
+                  final billData = doc.data() as Map<String, dynamic>;
+                  
+                  // Handle timestamp conversion
+                  DateTime date;
+                  if (billData['date'] is Timestamp) {
+                    date = (billData['date'] as Timestamp).toDate();
+                  } else {
+                    date = DateTime.now();
+                  }
+                  
+                  final customerName = billData['customer']?['name'] ?? 'Walk-in Customer';
+                  final total = (billData['total'] as num?)?.toDouble() ?? 0.0;
+                  
+                  // Get first item or default text
+                  String itemName = 'Unknown item';
+                  if (billData['items'] != null && (billData['items'] as List).isNotEmpty) {
+                    itemName = (billData['items'] as List).first['name'] ?? 'Unknown item';
+                  }
+                  
+                  return Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => BillDetailsSheet(
+                              billData: billData,
+                              currencyFormat: currencyFormat,
+                              dateFormat: dateFormat,
+                            ),
+                          );
+                        },
+                        child: _buildRecentSaleCard(
+                          customerName: customerName,
+                          itemName: itemName,
+                          date: dateFormat.format(date),
+                          amount: currencyFormat.format(total),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
