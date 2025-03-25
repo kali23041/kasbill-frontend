@@ -8,6 +8,7 @@ import 'billing/customer_section.dart';
 import 'billing/product_section.dart';
 import 'billing/bill_summary_section.dart';
 import 'billing/bill_header_section.dart';
+import 'billing/bills_list_page.dart';
 
 class BillingPage extends StatefulWidget {
   const BillingPage({super.key});
@@ -314,14 +315,35 @@ class _BillingPageState extends State<BillingPage> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Reset'),
-                              onPressed: _resetForm,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber.shade100,
-                                foregroundColor: Colors.amber.shade900,
-                              ),
+                            Row(
+                              children: [
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.history),
+                                  label: const Text('Sales'),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const BillsListPage(),
+                                      ),
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.amber.shade800,
+                                    side: BorderSide(color: Colors.amber.shade300),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Reset'),
+                                  onPressed: _resetForm,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.amber.shade100,
+                                    foregroundColor: Colors.amber.shade900,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
