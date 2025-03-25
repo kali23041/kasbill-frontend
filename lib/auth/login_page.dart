@@ -150,39 +150,82 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 80),
-              const Text(
-                'Welcome Back!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 60),
+              // Logo and Title
+              Column(
+                children: [
+                  Icon(
+                    Icons.diamond,
+                    size: 80,
+                    color: Colors.amber.shade800,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Jewelry Management',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Sign in to continue',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 40),
+              
               if (_errorMessage != null)
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.shade100.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Text(
                     _errorMessage!,
                     style: TextStyle(color: Colors.red.shade900),
                   ),
                 ),
+                
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
+                    // Email field with updated design
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Email',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
+                        hintText: 'Enter your email',
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(Icons.email),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.amber.shade500, width: 2),
+                        ),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
@@ -196,18 +239,35 @@ class _LoginPageState extends State<LoginPage> {
                       },
                     ),
                     const SizedBox(height: 20),
+                    
+                    // Password field with updated design
                     TextFormField(
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        border: const OutlineInputBorder(),
+                        hintText: 'Enter your password',
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         prefixIcon: const Icon(Icons.lock),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.amber.shade500, width: 2),
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isPasswordVisible
                                 ? Icons.visibility
                                 : Icons.visibility_off,
+                            color: Colors.grey,
                           ),
                           onPressed: () {
                             setState(() {
@@ -223,24 +283,36 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 10),
+                    
+                    // Forgot password with improved styling
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
-                          // Forgot password functionality
                           _showForgotPasswordDialog();
                         },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.amber.shade800,
+                        ),
                         child: const Text('Forgot Password?'),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Login button with shadow and rounded corners
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 55,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
+                          backgroundColor: Colors.amber.shade700,
+                          foregroundColor: Colors.white,
+                          elevation: 3,
+                          shadowColor: Colors.amber.withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: _isLoading
                             ? null
@@ -257,7 +329,7 @@ class _LoginPageState extends State<LoginPage> {
                                 'Login',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                       ),
@@ -265,43 +337,95 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              const Row(
+              
+              const SizedBox(height: 24),
+              
+              // Divider with better spacing
+              Row(
                 children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text('OR'),
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey.shade300,
+                      thickness: 1,
+                    ),
                   ),
-                  Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      'OR',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey.shade300,
+                      thickness: 1,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 20),
+              
+              const SizedBox(height: 24),
+              
+              // Google sign in button with modern design
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 55,
                 child: OutlinedButton.icon(
                   icon: Image.network(
                     'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
                     height: 24,
                   ),
-                  label: const Text('Continue with Google'),
+                  label: const Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   onPressed: _isLoading ? null : _signInWithGoogle,
                 ),
               ),
-              const SizedBox(height: 20),
+              
+              const SizedBox(height: 24),
+              
+              // Sign up link with better styling
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account?"),
+                  Text(
+                    "Don't have an account?",
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
                   TextButton(
                     onPressed: () {
                       Navigator.pushNamed(context, '/signup');
                     },
-                    child: const Text('Sign Up'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.amber.shade800,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    child: const Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
