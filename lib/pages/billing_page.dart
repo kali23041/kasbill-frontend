@@ -383,54 +383,30 @@ class _BillingPageState extends State<BillingPage> {
                                     ),
                                   ),
                                 
-                                // Basic info card
-                                Card(
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Invoice header
-                                        BillHeaderSection(
-                                          invoiceNumber: _generateInvoiceNumber(),
-                                          date: DateTime.now(),
-                                          dateFormat: dateFormat,
-                                        ),
-                                        const Divider(height: 24),
-                                        
-                                        // Customer selection
-                                        CustomerSection(
-                                          selectedCustomer: _selectedCustomer,
-                                          onSelectCustomer: _showCustomerSelectionSheet,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                // Invoice header card
+                                BillHeaderSection(
+                                  invoiceNumber: _generateInvoiceNumber(),
+                                  date: DateTime.now(),
+                                  dateFormat: dateFormat,
                                 ),
+                                const SizedBox(height: 16),
+                                
+                                // Customer selection card
+                                CustomerSection(
+                                  selectedCustomer: _selectedCustomer,
+                                  onSelectCustomer: _showCustomerSelectionSheet,
+                                ),
+                                const SizedBox(height: 16),
                                 
                                 // Product items section
-                                Card(
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: ProductSection(
-                                      billItems: _billItems,
-                                      onAddProduct: _showProductSelectionSheet,
-                                      onRemoveItem: _removeItemFromBill,
-                                      onChangeQuantity: _changeItemQuantity, 
-                                      currencyFormat: currencyFormat,
-                                    ),
-                                  ),
+                                ProductSection(
+                                  billItems: _billItems,
+                                  onAddProduct: _showProductSelectionSheet,
+                                  onRemoveItem: _removeItemFromBill,
+                                  onChangeQuantity: _changeItemQuantity, 
+                                  currencyFormat: currencyFormat,
                                 ),
+                                const SizedBox(height: 16),
                                 
                                 // Bill summary section
                                 Card(

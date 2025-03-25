@@ -14,94 +14,137 @@ class CustomerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Customer Information',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person,
+                      color: Colors.amber.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Customer Information',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            TextButton.icon(
-              icon: Icon(
-                selectedCustomer != null ? Icons.edit : Icons.add,
-                size: 18,
+              TextButton.icon(
+                icon: Icon(
+                  selectedCustomer != null ? Icons.edit : Icons.add,
+                  size: 16,
+                  color: Colors.amber.shade700,
+                ),
+                label: Text(
+                  selectedCustomer != null ? 'Change' : 'Add',
+                  style: TextStyle(color: Colors.amber.shade700, fontSize: 13),
+                ),
+                onPressed: onSelectCustomer,
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.amber.shade50,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
-              label: Text(selectedCustomer != null ? 'Change' : 'Add Customer'),
-              onPressed: onSelectCustomer,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        
-        if (selectedCustomer != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          if (selectedCustomer != null)
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   selectedCustomer!['name'],
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 20,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.phone, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
+                    Icon(Icons.phone, size: 16, color: Colors.amber.shade700),
+                    const SizedBox(width: 8),
                     Text(
                       selectedCustomer!['phone'],
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
+                    Icon(Icons.location_on, size: 16, color: Colors.amber.shade700),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         selectedCustomer!['address'],
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 15, 
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ],
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.person_outline, size: 24, color: Colors.amber.shade800),
+                  const SizedBox(width: 12),
+                  Text(
+                    'No customer selected',
+                    style: TextStyle(
+                      color: Colors.amber.shade800,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber.shade200),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.person_outline, color: Colors.amber.shade800),
-                const SizedBox(width: 8),
-                const Text('No customer selected'),
-              ],
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
