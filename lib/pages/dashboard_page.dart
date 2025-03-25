@@ -8,6 +8,7 @@ import 'dashboard/recent_sales_section.dart';
 import 'dashboard/low_stock_section.dart';
 import 'dashboard/upcoming_orders_section.dart';
 import 'rates_page.dart';
+import '../utils/update_checker.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -28,12 +29,15 @@ class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveCl
   @override
   void initState() {
     super.initState();
-    // Only check for rates update if we haven't shown the dialog yet
-    if (!_hasShownDialogThisSession) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Check for app updates
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateChecker.checkForUpdates(context);
+      
+      // Only check for rates update if we haven't shown the dialog yet
+      if (!_hasShownDialogThisSession) {
         _checkRatesUpdate();
-      });
-    }
+      }
+    });
   }
   
   Future<void> _checkRatesUpdate() async {
