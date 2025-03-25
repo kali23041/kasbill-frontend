@@ -13,18 +13,23 @@ class Navbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: 'Home',
+          label: 'Dashboard',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.business),
-          label: 'Reports',
+          icon: Icon(Icons.diamond),
+          label: 'Inventory',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.account_circle),
-          label: 'Profile',
+          icon: Icon(Icons.receipt_long),
+          label: 'Billing',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.people),
+          label: 'Customers',
         ),
       ],
       currentIndex: selectedIndex,
