@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'edit_profile_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -96,6 +97,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 
                 // User Profile Card
                 Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Colors.amber.shade700, Colors.amber.shade400],
@@ -114,6 +116,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // User avatar
                         CircleAvatar(
@@ -213,8 +216,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSettingItem(
                       icon: Icons.person_outline,
                       title: 'Edit Profile',
-                      onTap: () {
-                        // Navigate to edit profile
+                      onTap: () async {
+                        // Navigate to edit profile page and refresh data if changes were made
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                        );
+                        
+                        // If profile was updated, reload user data
+                        if (result == true) {
+                          _loadUserData();
+                        }
                       },
                     ),
                     _buildSettingItem(
