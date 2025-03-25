@@ -468,187 +468,351 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
     User? currentUser = _auth.currentUser;
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Categories'),
-        backgroundColor: Colors.purple.shade500,
-        foregroundColor: Colors.white,
-      ),
-      body: currentUser != null && currentUser.email != null
-          ? StreamBuilder<QuerySnapshot>(
-              stream: _firestore
-                  .collection('users')
-                  .doc(currentUser.email)
-                  .collection('categories')
-                  .orderBy('name')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'Error loading categories: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.red),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Categories',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                }
-                
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.category_outlined,
-                          size: 80,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No categories yet',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap the + button to add your first category',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _showAddCategorySheet(),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.purple.shade50,
+                      foregroundColor: Colors.purple.shade800,
                     ),
-                  );
-                }
-                
-                final categories = snapshot.data!.docs;
-                
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index].data() as Map<String, dynamic>;
-                    final categoryId = categories[index].id;
-                    final subcategories = category['subcategories'] as List<dynamic>?;
-                    
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Info card about categories
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.purple.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.purple.withOpacity(0.1),
+                      spreadRadius: 2,
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 2,
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
+                        color: Colors.purple.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.category,
+                        color: Colors.purple.shade800,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Jewelry Categories',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple.shade800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Organize your inventory with categories and subcategories',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
-                      child: ExpansionTile(
-                        title: Text(
-                          category['name'] ?? 'Unnamed Category',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                        subtitle: Text(
-                          category['description'] ?? 'No description',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.purple.shade100,
-                          child: Icon(
-                            Icons.category,
-                            color: Colors.purple.shade800,
-                          ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
-                                _showAddCategorySheet(
-                                  categoryId: categoryId,
-                                  categoryData: category,
-                                );
-                              },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Category list section title
+              currentUser != null && currentUser.email != null
+                ? StreamBuilder<QuerySnapshot>(
+                    stream: _firestore
+                        .collection('users')
+                        .doc(currentUser.email)
+                        .collection('categories')
+                        .orderBy('name')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      final hasCategories = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+                      
+                      return hasCategories 
+                        ? Text(
+                            'Your Categories',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteCategory(categoryId),
+                          )
+                        : const SizedBox.shrink();
+                    },
+                  )
+                : const SizedBox.shrink(),
+              const SizedBox(height: 16),
+              
+              // Categories list
+              Expanded(
+                child: currentUser != null && currentUser.email != null
+                  ? StreamBuilder<QuerySnapshot>(
+                      stream: _firestore
+                          .collection('users')
+                          .doc(currentUser.email)
+                          .collection('categories')
+                          .orderBy('name')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error loading categories: ${snapshot.error}',
+                              style: const TextStyle(color: Colors.red),
                             ),
-                          ],
-                        ),
-                        children: [
-                          if (subcategories != null && subcategories.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Subcategories:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey.shade800,
-                                    ),
+                          );
+                        }
+                        
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.category_outlined,
+                                  size: 80,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No categories yet',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.grey.shade600,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: subcategories.map((subcategory) {
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.purple.shade50,
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color: Colors.purple.shade200,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          subcategory.toString(),
-                                          style: TextStyle(
-                                            color: Colors.purple.shade800,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tap the + button to add your first category',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        
+                        final categories = snapshot.data!.docs;
+                        
+                        return ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: categories.length,
+                          itemBuilder: (context, index) {
+                            final category = categories[index].data() as Map<String, dynamic>;
+                            final categoryId = categories[index].id;
+                            final subcategories = category['subcategories'] as List<dynamic>?;
+                            
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    spreadRadius: 2,
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
-                            )
-                          else
-                            const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Text('No subcategories'),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            )
-          : const Center(
-              child: Text('You need to be logged in to view categories'),
-            ),
+                              child: Theme(
+                                data: Theme.of(context).copyWith(
+                                  dividerColor: Colors.transparent,
+                                  colorScheme: ColorScheme.light(
+                                    primary: Colors.purple.shade800,
+                                  ),
+                                ),
+                                child: ExpansionTile(
+                                  tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  childrenPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    category['name'] ?? 'Unnamed Category',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (category['description'] != null && category['description'].isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            category['description'],
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ),
+                                      if (subcategories != null && subcategories.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 8.0),
+                                          child: Text(
+                                            '${subcategories.length} subcategories',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.purple.shade700,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.purple.shade50,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.category,
+                                      color: Colors.purple.shade800,
+                                    ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        color: Colors.blue.shade600,
+                                        onPressed: () {
+                                          _showAddCategorySheet(
+                                            categoryId: categoryId,
+                                            categoryData: category,
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete),
+                                        color: Colors.red.shade600,
+                                        onPressed: () => _deleteCategory(categoryId),
+                                      ),
+                                    ],
+                                  ),
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade50,
+                                        borderRadius: const BorderRadius.only(
+                                          bottomLeft: Radius.circular(16),
+                                          bottomRight: Radius.circular(16),
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          if (subcategories != null && subcategories.isNotEmpty) ...[
+                                            Text(
+                                              'Subcategories',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 8,
+                                              children: subcategories.map((subcategory) {
+                                                return Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(
+                                                      color: Colors.purple.shade200,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    subcategory.toString(),
+                                                    style: TextStyle(
+                                                      color: Colors.purple.shade800,
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ] else
+                                            const Text(
+                                              'No subcategories defined',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    )
+                  : const Center(
+                      child: Text('You need to be logged in to view categories'),
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddCategorySheet(),
         backgroundColor: Colors.purple.shade700,
