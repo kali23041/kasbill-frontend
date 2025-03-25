@@ -18,38 +18,6 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   bool _isDialOpen = false;
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-  
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
-  }
-  
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-  
-  void _toggleDial() {
-    setState(() {
-      _isDialOpen = !_isDialOpen;
-      if (_isDialOpen) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
-    });
-  }
   
   @override
   Widget build(BuildContext context) {
@@ -112,171 +80,205 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
           ),
           
           // Dark overlay when menu is open
-          if (_isDialOpen)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isDialOpen = false;
-                  });
-                },
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                ),
-              ),
-            ),
+          AnimatedOpacity(
+            opacity: _isDialOpen ? 0.5 : 0.0,
+            duration: const Duration(milliseconds: 250),
+            child: _isDialOpen 
+              ? Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isDialOpen = false;
+                      });
+                    },
+                    child: Container(
+                      color: Colors.black,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+          ),
         ],
       ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Only show these when the menu is open
-          if (_isDialOpen) ...[
-            // Category button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.shade500,
-                      borderRadius: BorderRadius.circular(20),
+          // Category button
+          AnimatedSlide(
+            offset: _isDialOpen ? Offset.zero : const Offset(0, 1),
+            duration: const Duration(milliseconds: 250),
+            child: AnimatedOpacity(
+              opacity: _isDialOpen ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.shade500,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Add Category',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                    child: const Text(
-                      'Add Category',
-                      style: TextStyle(color: Colors.white),
+                    FloatingActionButton.small(
+                      heroTag: 'category',
+                      onPressed: () {
+                        setState(() {
+                          _isDialOpen = false;
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AddCategoryPage()),
+                        );
+                      },
+                      backgroundColor: Colors.purple.shade500,
+                      child: const Icon(Icons.category),
                     ),
-                  ),
-                  FloatingActionButton.small(
-                    heroTag: 'category',
-                    onPressed: () {
-                      setState(() {
-                        _isDialOpen = false;
-                      });
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AddCategoryPage()),
-                      );
-                    },
-                    backgroundColor: Colors.purple.shade500,
-                    child: const Icon(Icons.category),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            
-            // Metal button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade500,
-                      borderRadius: BorderRadius.circular(20),
+          ),
+          
+          // Metal button
+          AnimatedSlide(
+            offset: _isDialOpen ? Offset.zero : const Offset(0, 1),
+            duration: const Duration(milliseconds: 250),
+            child: AnimatedOpacity(
+              opacity: _isDialOpen ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade500,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Add Metal',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                    child: const Text(
-                      'Add Metal',
-                      style: TextStyle(color: Colors.white),
+                    FloatingActionButton.small(
+                      heroTag: 'metal',
+                      onPressed: () {
+                        setState(() {
+                          _isDialOpen = false;
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AddMetalPage()),
+                        );
+                      },
+                      backgroundColor: Colors.blue.shade500,
+                      child: const Icon(Icons.monitor_weight),
                     ),
-                  ),
-                  FloatingActionButton.small(
-                    heroTag: 'metal',
-                    onPressed: () {
-                      setState(() {
-                        _isDialOpen = false;
-                      });
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AddMetalPage()),
-                      );
-                    },
-                    backgroundColor: Colors.blue.shade500,
-                    child: const Icon(Icons.monitor_weight),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            
-            // Gemstone button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.teal.shade500,
-                      borderRadius: BorderRadius.circular(20),
+          ),
+          
+          // Gemstone button
+          AnimatedSlide(
+            offset: _isDialOpen ? Offset.zero : const Offset(0, 1),
+            duration: const Duration(milliseconds: 250),
+            child: AnimatedOpacity(
+              opacity: _isDialOpen ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade500,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Add Gemstone',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                    child: const Text(
-                      'Add Gemstone',
-                      style: TextStyle(color: Colors.white),
+                    FloatingActionButton.small(
+                      heroTag: 'gemstone',
+                      onPressed: () {
+                        setState(() {
+                          _isDialOpen = false;
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AddGemstonePage()),
+                        );
+                      },
+                      backgroundColor: Colors.teal.shade500,
+                      child: const Icon(Icons.diamond),
                     ),
-                  ),
-                  FloatingActionButton.small(
-                    heroTag: 'gemstone',
-                    onPressed: () {
-                      setState(() {
-                        _isDialOpen = false;
-                      });
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AddGemstonePage()),
-                      );
-                    },
-                    backgroundColor: Colors.teal.shade500,
-                    child: const Icon(Icons.diamond),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            
-            // Product button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade500,
-                      borderRadius: BorderRadius.circular(20),
+          ),
+          
+          // Product button
+          AnimatedSlide(
+            offset: _isDialOpen ? Offset.zero : const Offset(0, 1),
+            duration: const Duration(milliseconds: 250),
+            child: AnimatedOpacity(
+              opacity: _isDialOpen ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade500,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Add Product',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                    child: const Text(
-                      'Add Product',
-                      style: TextStyle(color: Colors.white),
+                    FloatingActionButton.small(
+                      heroTag: 'product',
+                      onPressed: () {
+                        setState(() {
+                          _isDialOpen = false;
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AddProductPage()),
+                        );
+                      },
+                      backgroundColor: Colors.green.shade500,
+                      child: const Icon(Icons.add_shopping_cart),
                     ),
-                  ),
-                  FloatingActionButton.small(
-                    heroTag: 'product',
-                    onPressed: () {
-                      setState(() {
-                        _isDialOpen = false;
-                      });
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AddProductPage()),
-                      );
-                    },
-                    backgroundColor: Colors.green.shade500,
-                    child: const Icon(Icons.add_shopping_cart),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
           
           // Main FAB - toggle button
           FloatingActionButton(
@@ -286,8 +288,10 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
               });
             },
             backgroundColor: Colors.amber.shade700,
-            child: Icon(
-              _isDialOpen ? Icons.close : Icons.add,
+            child: AnimatedRotation(
+              turns: _isDialOpen ? 0.125 : 0, // 45 degrees rotation
+              duration: const Duration(milliseconds: 250),
+              child: const Icon(Icons.add),
             ),
           ),
         ],
