@@ -409,34 +409,24 @@ class _BillingPageState extends State<BillingPage> {
                                 const SizedBox(height: 16),
                                 
                                 // Bill summary section
-                                Card(
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: BillSummarySection(
-                                      subtotal: _subtotal,
-                                      discountController: _discountController,
-                                      taxController: _taxController,
-                                      additionalChargesController: _additionalChargesController,
-                                      notesController: _notesController,
-                                      discount: _discount,
-                                      tax: _tax,
-                                      additionalCharges: _additionalCharges,
-                                      total: _total,
-                                      paymentMethod: _paymentMethod,
-                                      paymentMethods: _paymentMethods,
-                                      onPaymentMethodChanged: (method) {
-                                        setState(() {
-                                          _paymentMethod = method;
-                                        });
-                                      },
-                                      currencyFormat: currencyFormat,
-                                    ),
-                                  ),
+                                BillSummarySection(
+                                  subtotal: _subtotal,
+                                  discountController: _discountController,
+                                  taxController: _taxController,
+                                  additionalChargesController: _additionalChargesController,
+                                  notesController: _notesController,
+                                  discount: _discount,
+                                  tax: _tax,
+                                  additionalCharges: _additionalCharges,
+                                  total: _total,
+                                  paymentMethod: _paymentMethod,
+                                  paymentMethods: _paymentMethods,
+                                  onPaymentMethodChanged: (method) {
+                                    setState(() {
+                                      _paymentMethod = method;
+                                    });
+                                  },
+                                  currencyFormat: currencyFormat,
                                 ),
                               ],
                             ),
