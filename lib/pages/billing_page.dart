@@ -317,9 +317,19 @@ class _BillingPageState extends State<BillingPage> {
                             ),
                             Row(
                               children: [
-                                OutlinedButton.icon(
-                                  icon: const Icon(Icons.history),
-                                  label: const Text('Sales'),
+                                TextButton.icon(
+                                  icon: Icon(
+                                    Icons.history,
+                                    size: 16,
+                                    color: Colors.amber.shade700,
+                                  ),
+                                  label: Text(
+                                    'Sales',
+                                    style: TextStyle(
+                                      color: Colors.amber.shade700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                   onPressed: () {
                                     Navigator.push(
                                       context,
@@ -328,19 +338,35 @@ class _BillingPageState extends State<BillingPage> {
                                       ),
                                     );
                                   },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.amber.shade800,
-                                    side: BorderSide(color: Colors.amber.shade300),
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: Colors.amber.shade50,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.refresh),
-                                  label: const Text('Reset'),
+                                TextButton.icon(
+                                  icon: Icon(
+                                    Icons.refresh,
+                                    size: 16,
+                                    color: Colors.red.shade700,
+                                  ),
+                                  label: Text(
+                                    'Reset',
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                   onPressed: _resetForm,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber.shade100,
-                                    foregroundColor: Colors.amber.shade900,
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: Colors.red.shade50,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -442,19 +468,46 @@ class _BillingPageState extends State<BillingPage> {
                     left: 0,
                     right: 0,
                     child: Container(
-                      color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 10,
+                            offset: const Offset(0, -3),
+                          ),
+                        ],
+                      ),
                       padding: const EdgeInsets.all(16),
                       child: SizedBox(
                         height: 50,
                         child: ElevatedButton(
                           onPressed: _saveBill,
-                          child: const Text(
-                            'Save Bill',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber.shade700,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
+                            elevation: 0,
                           ),
+                          child: _isProcessing 
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Save Bill',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                     ),

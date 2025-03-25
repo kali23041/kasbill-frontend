@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AnalyticsSection extends StatelessWidget {
   final NumberFormat currencyFormat;
@@ -11,29 +13,77 @@ class AnalyticsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24.0),
-      child: Row(
-        children: [
-          _buildSummaryCard(
-            context,
-            title: 'Total Sales',
-            value: currencyFormat.format(125780),
-            icon: Icons.attach_money,
-            color: Colors.green,
-            change: '+8.5%',
-          ),
-          const SizedBox(width: 16),
-          _buildSummaryCard(
-            context,
-            title: 'Inventory Value',
-            value: currencyFormat.format(543200),
-            icon: Icons.diamond,
-            color: Colors.amber.shade800,
-            change: '+2.3%',
-          ),
-        ],
-      ),
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    final String? userEmail = _auth.currentUser?.email;
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('users')
+          .doc(userEmail)
+          .collection('products')
+          .snapshots(),
+      builder: (context, productSnapshot) {
+        // Calculate inventory value from products
+        double inventoryValue = 0.0;
+        if (productSnapshot.hasData) {
+          for (var doc in productSnapshot.data!.docs) {
+            final product = doc.data() as Map<String, dynamic>;
+            final price = (product['totalPrice'] as num?)?.toDouble() ?? 0.0;
+            inventoryValue += price;
+          }
+        }
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: _firestore
+              .collection('users')
+              .doc(userEmail)
+              .collection('bills')
+              .snapshots(),
+          builder: (context, billsSnapshot) {
+            // Calculate total sales from bills
+            double totalSales = 0.0;
+            int billCount = 0;
+            
+            if (billsSnapshot.hasData) {
+              billCount = billsSnapshot.data!.docs.length;
+              for (var doc in billsSnapshot.data!.docs) {
+                final bill = doc.data() as Map<String, dynamic>;
+                final total = (bill['total'] as num?)?.toDouble() ?? 0.0;
+                totalSales += total;
+              }
+            }
+            
+            // Calculate percentage change (placeholder for now)
+            String salesChange = billCount > 0 ? "+${billCount} bills" : "No sales yet";
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 24.0),
+              child: Row(
+                children: [
+                  _buildSummaryCard(
+                    context,
+                    title: 'Total Sales',
+                    value: currencyFormat.format(totalSales),
+                    icon: Icons.attach_money,
+                    color: Colors.green,
+                    change: salesChange,
+                  ),
+                  const SizedBox(width: 16),
+                  _buildSummaryCard(
+                    context,
+                    title: 'Inventory Value',
+                    value: currencyFormat.format(inventoryValue),
+                    icon: Icons.diamond,
+                    color: Colors.amber.shade800,
+                    change: '${productSnapshot.hasData ? productSnapshot.data!.docs.length : 0} items',
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
