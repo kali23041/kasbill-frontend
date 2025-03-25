@@ -94,20 +94,24 @@ class _RatesPageState extends State<RatesPage> {
               final String? userEmail = _auth.currentUser?.email;
               if (userEmail != null) {
                 try {
-                  // Show progress dialog
+                  // Close the dialog
                   Navigator.of(context).pop();
                   _showProgressDialog('Updating rates...');
                   
+                  // Create batch for faster updates
+                  final batch = _firestore.batch();
+                  
                   // 1. Update metal rate
-                  await _firestore
+                  final metalRef = _firestore
                     .collection('users')
                     .doc(userEmail)
                     .collection('metals')
-                    .doc(metalId)
-                    .update({
-                      'rate': newRate,
-                      'updatedAt': FieldValue.serverTimestamp(),
-                    });
+                    .doc(metalId);
+                    
+                  batch.update(metalRef, {
+                    'rate': newRate,
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
                   
                   // 2. Get all products with this metal
                   final productsSnapshot = await _firestore
@@ -117,7 +121,7 @@ class _RatesPageState extends State<RatesPage> {
                     .where('metal.id', isEqualTo: metalId)
                     .get();
                   
-                  // 3. Update each product price
+                  // 3. Update each product price in the batch
                   int updatedProductsCount = 0;
                   for (final doc in productsSnapshot.docs) {
                     final product = doc.data();
@@ -135,26 +139,28 @@ class _RatesPageState extends State<RatesPage> {
                     double singleItemPrice = totalBeforeDiscount - discountAmount;
                     double totalPrice = singleItemPrice * quantity;
                     
-                    // Update product
-                    await _firestore
+                    // Add update to batch
+                    final productRef = _firestore
                       .collection('users')
                       .doc(userEmail)
                       .collection('products')
-                      .doc(doc.id)
-                      .update({
-                        'metal.rate': newRate,
-                        'unitPrice': singleItemPrice,
-                        'totalPrice': totalPrice,
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      });
+                      .doc(doc.id);
+                      
+                    batch.update(productRef, {
+                      'metal.rate': newRate,
+                      'unitPrice': singleItemPrice,
+                      'totalPrice': totalPrice,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
                     
                     updatedProductsCount++;
                   }
                   
+                  // Commit all updates in a single batch
+                  await batch.commit();
+                  
                   // Dismiss progress dialog
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.of(context).pop();
                   
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -164,9 +170,7 @@ class _RatesPageState extends State<RatesPage> {
                   );
                 } catch (e) {
                   // Dismiss progress dialog
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  Navigator.of(context).pop();
                   
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -222,6 +226,10 @@ class _RatesPageState extends State<RatesPage> {
       
       int totalUpdatedProducts = 0;
       
+      // Create a batch for faster updates
+      WriteBatch batch = _firestore.batch();
+      int batchCount = 0;
+      
       // For each metal, update all related products
       for (final metalDoc in metalsSnapshot.docs) {
         final metal = metalDoc.data();
@@ -253,27 +261,39 @@ class _RatesPageState extends State<RatesPage> {
           double singleItemPrice = totalBeforeDiscount - discountAmount;
           double totalPrice = singleItemPrice * quantity;
           
-          // Update product
-          await _firestore
+          // Add update to batch
+          final productRef = _firestore
             .collection('users')
             .doc(userEmail)
             .collection('products')
-            .doc(productDoc.id)
-            .update({
-              'metal.rate': metalRate,
-              'unitPrice': singleItemPrice,
-              'totalPrice': totalPrice,
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
+            .doc(productDoc.id);
+            
+          batch.update(productRef, {
+            'metal.rate': metalRate,
+            'unitPrice': singleItemPrice,
+            'totalPrice': totalPrice,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
           
+          batchCount++;
           totalUpdatedProducts++;
+          
+          // Firestore allows max 500 operations in a batch
+          if (batchCount >= 450) {
+            await batch.commit();
+            batch = _firestore.batch();
+            batchCount = 0;
+          }
         }
       }
       
-      // Dismiss progress dialog
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
+      // Commit any remaining updates in the batch
+      if (batchCount > 0) {
+        await batch.commit();
       }
+      
+      // Dismiss progress dialog
+      Navigator.of(context).pop();
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -283,9 +303,7 @@ class _RatesPageState extends State<RatesPage> {
       );
     } catch (e) {
       // Dismiss progress dialog
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+      Navigator.of(context).pop();
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
