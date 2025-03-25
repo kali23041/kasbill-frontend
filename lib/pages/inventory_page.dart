@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'inventory/add_category_page.dart';
+import 'inventory/add_metal_page.dart';
+import 'inventory/add_gemstone_page.dart';
+import 'inventory/add_product_page.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -47,90 +51,6 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
     });
   }
   
-  void _showAddCategoryDialog() {
-    _toggleDial();
-    // Show dialog to add category
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Add Category',
-          style: TextStyle(color: Colors.amber.shade800),
-        ),
-        content: const Text('Category dialog will be implemented here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  void _showAddMetalDialog() {
-    _toggleDial();
-    // Show dialog to add metal
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Add Metal',
-          style: TextStyle(color: Colors.amber.shade800),
-        ),
-        content: const Text('Metal dialog will be implemented here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  void _showAddGemstoneDialog() {
-    _toggleDial();
-    // Show dialog to add gemstone
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Add Gemstone',
-          style: TextStyle(color: Colors.amber.shade800),
-        ),
-        content: const Text('Gemstone dialog will be implemented here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  void _showAddProductDialog() {
-    _toggleDial();
-    // Show dialog to add product
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Add Product',
-          style: TextStyle(color: Colors.amber.shade800),
-        ),
-        content: const Text('Product dialog will be implemented here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     User? currentUser = _auth.currentUser;
@@ -191,215 +111,183 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
             ),
           ),
           
-          // Overlay that darkens only the page content
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              return Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: _animation.value == 0,
-                  child: GestureDetector(
-                    onTap: _toggleDial,
-                    child: Container(
-                      color: Colors.black.withOpacity(0.5 * _animation.value),
-                    ),
-                  ),
+          // Dark overlay when menu is open
+          if (_isDialOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isDialOpen = false;
+                  });
+                },
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
         ],
       ),
-      floatingActionButton: Stack(
-        alignment: Alignment.bottomRight,
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Add Category FAB with Label
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, -225 * _animation.value),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Label
-                    AnimatedOpacity(
-                      opacity: _animation.value,
-                      duration: const Duration(milliseconds: 200),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.shade500,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Add Category',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
+          // Only show these when the menu is open
+          if (_isDialOpen) ...[
+            // Category button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade500,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    // Button
-                    Transform.scale(
-                      scale: _animation.value,
-                      child: Opacity(
-                        opacity: _animation.value,
-                        child: FloatingActionButton.small(
-                          heroTag: 'category',
-                          onPressed: _showAddCategoryDialog,
-                          backgroundColor: Colors.purple.shade500,
-                          child: const Icon(Icons.category),
-                        ),
-                      ),
+                    child: const Text(
+                      'Add Category',
+                      style: TextStyle(color: Colors.white),
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                  FloatingActionButton.small(
+                    heroTag: 'category',
+                    onPressed: () {
+                      setState(() {
+                        _isDialOpen = false;
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddCategoryPage()),
+                      );
+                    },
+                    backgroundColor: Colors.purple.shade500,
+                    child: const Icon(Icons.category),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Metal button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade500,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Add Metal',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  FloatingActionButton.small(
+                    heroTag: 'metal',
+                    onPressed: () {
+                      setState(() {
+                        _isDialOpen = false;
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddMetalPage()),
+                      );
+                    },
+                    backgroundColor: Colors.blue.shade500,
+                    child: const Icon(Icons.monitor_weight),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Gemstone button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade500,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Add Gemstone',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  FloatingActionButton.small(
+                    heroTag: 'gemstone',
+                    onPressed: () {
+                      setState(() {
+                        _isDialOpen = false;
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddGemstonePage()),
+                      );
+                    },
+                    backgroundColor: Colors.teal.shade500,
+                    child: const Icon(Icons.diamond),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Product button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade500,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Add Product',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  FloatingActionButton.small(
+                    heroTag: 'product',
+                    onPressed: () {
+                      setState(() {
+                        _isDialOpen = false;
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddProductPage()),
+                      );
+                    },
+                    backgroundColor: Colors.green.shade500,
+                    child: const Icon(Icons.add_shopping_cart),
+                  ),
+                ],
+              ),
+            ),
+          ],
           
-          // Add Metal FAB with Label
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, -170 * _animation.value),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Label
-                    AnimatedOpacity(
-                      opacity: _animation.value,
-                      duration: const Duration(milliseconds: 200),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade500,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Add Metal',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    // Button
-                    Transform.scale(
-                      scale: _animation.value,
-                      child: Opacity(
-                        opacity: _animation.value,
-                        child: FloatingActionButton.small(
-                          heroTag: 'metal',
-                          onPressed: _showAddMetalDialog,
-                          backgroundColor: Colors.blue.shade500,
-                          child: const Icon(Icons.monitor_weight),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          
-          // Add Gemstone FAB with Label
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, -115 * _animation.value),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Label
-                    AnimatedOpacity(
-                      opacity: _animation.value,
-                      duration: const Duration(milliseconds: 200),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.teal.shade500,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Add Gemstone',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    // Button
-                    Transform.scale(
-                      scale: _animation.value,
-                      child: Opacity(
-                        opacity: _animation.value,
-                        child: FloatingActionButton.small(
-                          heroTag: 'gemstone',
-                          onPressed: _showAddGemstoneDialog,
-                          backgroundColor: Colors.teal.shade500,
-                          child: const Icon(Icons.diamond),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          
-          // Add Product FAB with Label
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, -60 * _animation.value),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Label
-                    AnimatedOpacity(
-                      opacity: _animation.value,
-                      duration: const Duration(milliseconds: 200),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade500,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Add Product',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    // Button
-                    Transform.scale(
-                      scale: _animation.value,
-                      child: Opacity(
-                        opacity: _animation.value,
-                        child: FloatingActionButton.small(
-                          heroTag: 'product',
-                          onPressed: _showAddProductDialog,
-                          backgroundColor: Colors.green.shade500,
-                          child: const Icon(Icons.add_shopping_cart),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          
-          // Main FAB
+          // Main FAB - toggle button
           FloatingActionButton(
-            onPressed: _toggleDial,
+            onPressed: () {
+              setState(() {
+                _isDialOpen = !_isDialOpen;
+              });
+            },
             backgroundColor: Colors.amber.shade700,
-            child: AnimatedIcon(
-              icon: AnimatedIcons.menu_close,
-              progress: _animation,
+            child: Icon(
+              _isDialOpen ? Icons.close : Icons.add,
             ),
           ),
         ],
