@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'loans_list_page.dart';
+import '../member/premium_upgrade_popup.dart';
+import '../settings/upgrade_to_premium_page.dart';
 
 class LoanPage extends StatefulWidget {
   const LoanPage({super.key});
@@ -259,6 +261,63 @@ class _LoanPageState extends State<LoanPage> {
     );
   }
   
+  Future<bool> _canCreateLoan() async {
+    User? currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) return false;
+    
+    try {
+      // Check membership status
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(currentUser.email)
+          .get();
+          
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      final membershipType = userData?['membership'] ?? 'free';
+      
+      // If premium, no limit
+      if (membershipType.toLowerCase() != 'free') {
+        return true;
+      }
+      
+      // Count existing loans for free users
+      final loansSnapshot = await _firestore
+          .collection('users')
+          .doc(currentUser.email)
+          .collection('loans')
+          .get();
+      
+      // Free users can have max 3 loans
+      return loansSnapshot.docs.length < 3;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error checking membership: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+  }
+  
+  void _showUpgradePopup() {
+    showDialog(
+      context: context,
+      builder: (context) => PremiumUpgradePopup(
+        title: 'Loan Limit Reached',
+        description: 'Free members can only create up to 3 loans. Upgrade to premium for unlimited loans.',
+        onUpgrade: () {
+          Navigator.of(context).pop();
+          // Navigate to the correct upgrade page
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UpgradeToPremiumPage()),
+          );
+        },
+      ),
+    );
+  }
+  
   Future<void> _saveLoan() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -275,6 +334,13 @@ class _LoanPageState extends State<LoanPage> {
       setState(() {
         _errorMessage = 'Please add at least one image of the item';
       });
+      return;
+    }
+    
+    // Check if user can create another loan
+    final canCreate = await _canCreateLoan();
+    if (!canCreate) {
+      _showUpgradePopup();
       return;
     }
     

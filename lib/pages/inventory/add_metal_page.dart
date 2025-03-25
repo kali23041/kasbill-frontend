@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../member/premium_upgrade_popup.dart';
+import '../settings/upgrade_to_premium_page.dart';
 
 class AddMetalPage extends StatefulWidget {
   const AddMetalPage({super.key});
@@ -40,15 +42,80 @@ class _AddMetalPageState extends State<AddMetalPage> {
     super.dispose();
   }
   
-  void _showAddMetalSheet({String? metalId, Map<String, dynamic>? metalData}) {
-    // Reset form
+  Future<bool> _canCreateMetal() async {
+    User? currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) return false;
+    
+    try {
+      final userDoc = await _firestore
+              .collection('users')
+              .doc(currentUser.email)
+          .get();
+          
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      final membershipType = userData?['membership'] ?? 'free';
+      
+      if (membershipType.toLowerCase() != 'free') {
+        return true;
+      }
+      
+      final metalsSnapshot = await _firestore
+            .collection('users')
+            .doc(currentUser.email)
+            .collection('metals')
+          .get();
+      
+      return metalsSnapshot.docs.length < 3;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error checking membership: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+  }
+  
+  void _showUpgradePopup() {
+    showDialog(
+      context: context,
+      builder: (context) => PremiumUpgradePopup(
+        title: 'Metal Limit Reached',
+        description: 'Free members can only create up to 3 metals. Upgrade to premium for unlimited metals.',
+        onUpgrade: () {
+          Navigator.of(context).pop();
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UpgradeToPremiumPage()),
+          );
+        },
+      ),
+    );
+  }
+  
+  void _showAddMetalSheet({String? metalId, Map<String, dynamic>? metalData}) async {
+    if (metalId != null && metalData != null) {
+      _showMetalForm(metalId: metalId, metalData: metalData);
+      return;
+    }
+    
+    final canCreate = await _canCreateMetal();
+    if (!canCreate) {
+      _showUpgradePopup();
+      return;
+    }
+    
+    _showMetalForm();
+  }
+  
+  void _showMetalForm({String? metalId, Map<String, dynamic>? metalData}) {
     _nameController.clear();
     _skuController.clear();
     _rateController.clear();
     _selectedCarat = '24K';
     _errorMessage = null;
     
-    // If editing, populate form with existing data
     if (metalId != null && metalData != null) {
       _isEditing = true;
       _editingMetalId = metalId;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../member/premium_upgrade_popup.dart';
+import '../settings/upgrade_to_premium_page.dart';
 
 class AddCategoryPage extends StatefulWidget {
   const AddCategoryPage({super.key});
@@ -53,95 +55,82 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
     }
   }
   
-  Future<void> _saveCategory() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<bool> _canCreateCategory() async {
+    User? currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) return false;
     
     try {
-      User? currentUser = _auth.currentUser;
-      if (currentUser != null && currentUser.email != null) {
-        final String categoryName = _categoryNameController.text.trim();
-        
-        // Prepare subcategories list
-        final List<String> subcategories = [];
-        for (var controller in _subCategoryControllers) {
-          final subcategory = controller.text.trim();
-          if (subcategory.isNotEmpty) {
-            subcategories.add(subcategory);
-          }
-        }
-        
-        if (_isEditing && _editingCategoryId != null) {
-          // Update existing category
-          await _firestore
-              .collection('users')
-              .doc(currentUser.email)
-              .collection('categories')
-              .doc(_editingCategoryId)
-              .update({
-                'name': categoryName,
-                'description': _descriptionController.text.trim(),
-                'subcategories': subcategories,
-                'updatedAt': FieldValue.serverTimestamp(),
-              });
-        } else {
-          // Check if category with this name already exists
-          final docRef = _firestore
-              .collection('users')
-              .doc(currentUser.email)
-              .collection('categories')
-              .doc(categoryName);
-              
-          final doc = await docRef.get();
-          if (doc.exists) {
-            setState(() {
-              _errorMessage = 'A category with this name already exists';
-              _isLoading = false;
-            });
-            return;
-          }
+      // Check membership status
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(currentUser.email)
+          .get();
           
-          // Add new category
-          await docRef.set({
-            'name': categoryName,
-            'description': _descriptionController.text.trim(),
-            'subcategories': subcategories,
-            'createdAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-        }
-        
-        // Reset form and close bottom sheet
-        if (mounted) {
-          Navigator.pop(context);
-          
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_isEditing ? 'Category updated successfully' : 'Category added successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      final membershipType = userData?['membership'] ?? 'free';
+      
+      // If premium, no limit
+      if (membershipType.toLowerCase() != 'free') {
+        return true;
       }
+      
+      // Count existing categories for free users
+      final categoriesSnapshot = await _firestore
+          .collection('users')
+          .doc(currentUser.email)
+          .collection('categories')
+          .get();
+      
+      // Free users can have max 3 categories
+      return categoriesSnapshot.docs.length < 3;
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to save category: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error checking membership: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
     }
   }
   
-  void _showAddCategorySheet({String? categoryId, Map<String, dynamic>? categoryData}) {
+  void _showUpgradePopup() {
+    showDialog(
+      context: context,
+      builder: (context) => PremiumUpgradePopup(
+        title: 'Category Limit Reached',
+        description: 'Free members can only create up to 3 categories. Upgrade to premium for unlimited categories.',
+        onUpgrade: () {
+          Navigator.of(context).pop();
+          // Navigate to the upgrade page
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UpgradeToPremiumPage()),
+          );
+        },
+      ),
+    );
+  }
+  
+  void _showAddCategorySheet({String? categoryId, Map<String, dynamic>? categoryData}) async {
+    // If editing existing category, show the form right away
+    if (categoryId != null && categoryData != null) {
+      _showCategoryForm(categoryId: categoryId, categoryData: categoryData);
+      return;
+    }
+    
+    // Otherwise, check if user can create more categories
+    final canCreate = await _canCreateCategory();
+    if (!canCreate) {
+      _showUpgradePopup();
+      return;
+    }
+    
+    // If they can, show the form
+    _showCategoryForm();
+  }
+  
+  void _showCategoryForm({String? categoryId, Map<String, dynamic>? categoryData}) {
     // Reset form
     _categoryNameController.clear();
     _descriptionController.clear();
@@ -406,6 +395,94 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
         },
       ),
     );
+  }
+  
+  Future<void> _saveCategory() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser != null && currentUser.email != null) {
+        final String categoryName = _categoryNameController.text.trim();
+        
+        // Prepare subcategories list
+        final List<String> subcategories = [];
+        for (var controller in _subCategoryControllers) {
+          final subcategory = controller.text.trim();
+          if (subcategory.isNotEmpty) {
+            subcategories.add(subcategory);
+          }
+        }
+        
+        if (_isEditing && _editingCategoryId != null) {
+          // Update existing category
+          await _firestore
+              .collection('users')
+              .doc(currentUser.email)
+              .collection('categories')
+              .doc(_editingCategoryId)
+              .update({
+                'name': categoryName,
+                'description': _descriptionController.text.trim(),
+                'subcategories': subcategories,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+        } else {
+          // Check if category with this name already exists
+          final docRef = _firestore
+              .collection('users')
+              .doc(currentUser.email)
+              .collection('categories')
+              .doc(categoryName);
+              
+          final doc = await docRef.get();
+          if (doc.exists) {
+            setState(() {
+              _errorMessage = 'A category with this name already exists';
+              _isLoading = false;
+            });
+            return;
+          }
+          
+          // Add new category
+          await docRef.set({
+            'name': categoryName,
+            'description': _descriptionController.text.trim(),
+            'subcategories': subcategories,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+        
+        // Reset form and close bottom sheet
+        if (mounted) {
+          Navigator.pop(context);
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_isEditing ? 'Category updated successfully' : 'Category added successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to save category: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
   
   Future<void> _deleteCategory(String categoryId) async {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'member/premium_upgrade_popup.dart';
+import 'settings/upgrade_to_premium_page.dart';
 
 class RatesPage extends StatefulWidget {
   const RatesPage({super.key});
@@ -24,7 +26,53 @@ class _RatesPageState extends State<RatesPage> {
     super.dispose();
   }
   
+  Future<bool> _isPremiumUser() async {
+    User? currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) return false;
+    
+    try {
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(currentUser.email)
+          .get();
+          
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      final membershipType = userData?['membership'] ?? 'free';
+      
+      // Check if premium or higher tier
+      return membershipType.toLowerCase() != 'free';
+    } catch (e) {
+      print('Error checking membership: $e');
+      return false;
+    }
+  }
+
+  void _showUpgradePopup() {
+    showDialog(
+      context: context,
+      builder: (context) => PremiumUpgradePopup(
+        title: 'Premium Feature',
+        description: 'Updating metal rates is a premium feature. Upgrade to premium to access rate management tools.',
+        onUpgrade: () {
+          Navigator.of(context).pop();
+          // Navigate to upgrade page
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UpgradeToPremiumPage()),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _updateRate(String metalId, double currentRate) async {
+    // Check if user is premium before allowing rate update
+    final isPremium = await _isPremiumUser();
+    if (!isPremium) {
+      _showUpgradePopup();
+      return;
+    }
+    
     final TextEditingController rateController = TextEditingController(text: currentRate.toString());
     
     showDialog(
@@ -211,6 +259,13 @@ class _RatesPageState extends State<RatesPage> {
   }
 
   Future<void> _updateAllProductRates() async {
+    // Check if user is premium before allowing bulk update
+    final isPremium = await _isPremiumUser();
+    if (!isPremium) {
+      _showUpgradePopup();
+      return;
+    }
+    
     final String? userEmail = _auth.currentUser?.email;
     if (userEmail == null) return;
     
