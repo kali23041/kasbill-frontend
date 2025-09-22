@@ -23,18 +23,11 @@ class ProductSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,69 +37,71 @@ class ProductSection extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.shopping_cart,
-                    color: Colors.green.shade700,
-                    size: 20,
+                  const Icon(
+                    Icons.shopping_cart_outlined,
+                    color: Color(0xFF10B981),
+                    size: 18,
                   ),
                   const SizedBox(width: 8),
                   const Text(
                     'Product Items',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                 ],
               ),
               TextButton.icon(
-                icon: const Icon(Icons.add_shopping_cart, size: 16),
-                label: const Text('Add Product'),
+                icon: const Icon(Icons.add_shopping_cart_outlined, size: 16),
+                label: const Text('Add Product', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 onPressed: onAddProduct,
                 style: TextButton.styleFrom(
-                  backgroundColor: Colors.green.shade50,
-                  foregroundColor: Colors.green.shade700,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  backgroundColor: const Color(0xFF10B981).withOpacity(0.1),
+                  foregroundColor: const Color(0xFF10B981),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           
           // Items list
           if (billItems.isEmpty)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Column(
                 children: [
                   Icon(
                     Icons.shopping_cart_outlined,
-                    size: 48,
-                    color: Colors.grey.shade400,
+                    size: 32,
+                    color: const Color(0xFF94A3B8),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 6),
+                  const Text(
                     'No items added yet',
                     style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 16,
+                      color: Color(0xFF64748B),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 2),
+                  const Text(
                     'Click "Add Product" to add items to the bill',
                     style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 14,
+                      color: Color(0xFF94A3B8),
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -117,7 +112,7 @@ class ProductSection extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: billItems.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 8),
+              separatorBuilder: (context, index) => const SizedBox(height: 6),
               itemBuilder: (context, index) {
                 final item = billItems[index];
                 return BillItemCard(
@@ -154,18 +149,11 @@ class BillItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,16 +165,17 @@ class BillItemCard extends StatelessWidget {
                 child: Text(
                   item['name'],
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
               ),
               IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Colors.red.shade400,
-                  size: 20,
+                icon: const Icon(
+                  Icons.delete_outlined,
+                  color: Color(0xFFDC2626),
+                  size: 18,
                 ),
                 onPressed: onRemove,
                 constraints: const BoxConstraints(),
@@ -199,64 +188,67 @@ class BillItemCard extends StatelessWidget {
             children: [
               Text(
                 '${item['category']} • ${item['metal']}',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 12,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
+                  horizontal: 4,
+                  vertical: 1,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(4),
+                  color: const Color(0xFF1E40AF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(3),
                 ),
                 child: Text(
                   '${item['weight']}g',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E40AF),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 currencyFormat.format(item['unitPrice']),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade700,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF10B981),
+                  fontSize: 13,
                 ),
               ),
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
-                    color: Colors.grey.shade700,
+                    icon: const Icon(Icons.remove_circle_outline, size: 18),
+                    color: const Color(0xFF64748B),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
                     onPressed: onDecreaseQuantity,
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       '${item['quantity']}',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    color: Colors.grey.shade700,
+                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                    color: const Color(0xFF64748B),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
                     onPressed: onIncreaseQuantity,
@@ -266,7 +258,9 @@ class BillItemCard extends StatelessWidget {
               Text(
                 currencyFormat.format(item['totalPrice']),
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: Color(0xFF1E293B),
                 ),
               ),
             ],
@@ -298,8 +292,8 @@ class ProductSelectionDialog extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
         ),
       ),
       child: StatefulBuilder(
@@ -314,16 +308,16 @@ class ProductSelectionDialog extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       'Add Products',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade800,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Icons.close_outlined, color: Color(0xFF64748B), size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -337,13 +331,22 @@ class ProductSelectionDialog extends StatelessWidget {
                   controller: searchController,
                   decoration: InputDecoration(
                     hintText: 'Search products by name, category, or metal',
-                    prefixIcon: const Icon(Icons.search),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                    prefixIcon: const Icon(Icons.search_outlined, color: Color(0xFF64748B), size: 20),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                     suffixIcon: searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(Icons.clear_outlined, color: Color(0xFF64748B), size: 18),
                             onPressed: () {
                               searchController.clear();
                               setState(() {
@@ -353,6 +356,7 @@ class ProductSelectionDialog extends StatelessWidget {
                           )
                         : null,
                   ),
+                  style: const TextStyle(fontSize: 14),
                   onChanged: (value) {
                     setState(() {
                       searchQuery = value.toLowerCase();
@@ -373,18 +377,29 @@ class ProductSelectionDialog extends StatelessWidget {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF1E40AF),
+                          strokeWidth: 2,
+                        ),
+                      );
                     }
                     
                     if (snapshot.hasError) {
                       return Center(
-                        child: Text('Error loading products: ${snapshot.error}'),
+                        child: Text(
+                          'Error loading products: ${snapshot.error}',
+                          style: const TextStyle(color: Color(0xFFDC2626)),
+                        ),
                       );
                     }
                     
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return const Center(
-                        child: Text('No products found'),
+                        child: Text(
+                          'No products found',
+                          style: TextStyle(color: Color(0xFF64748B)),
+                        ),
                       );
                     }
                     
@@ -405,7 +420,10 @@ class ProductSelectionDialog extends StatelessWidget {
                     
                     return filteredDocs.isEmpty
                         ? Center(
-                            child: Text('No products match "${searchController.text}"'),
+                            child: Text(
+                              'No products match "${searchController.text}"',
+                              style: const TextStyle(color: Color(0xFF64748B)),
+                            ),
                           )
                         : ListView.builder(
                             itemCount: filteredDocs.length,
@@ -426,14 +444,19 @@ class ProductSelectionDialog extends StatelessWidget {
                               final categoryName = product['category']?['name'] ?? 'N/A';
                               final imagesList = product['images'] as List<dynamic>? ?? [];
                               
-                              return Card(
+                              return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
                                 child: ListTile(
                                   leading: Container(
-                                    width: 50,
-                                    height: 50,
+                                    width: 40,
+                                    height: 40,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                       image: imagesList.isNotEmpty
                                           ? DecorationImage(
                                               image: MemoryImage(
@@ -442,21 +465,31 @@ class ProductSelectionDialog extends StatelessWidget {
                                               fit: BoxFit.cover,
                                             )
                                           : null,
-                                      color: Colors.grey.shade200,
+                                      color: const Color(0xFFF1F5F9),
                                     ),
                                     child: imagesList.isEmpty
-                                        ? Icon(Icons.image_not_supported, color: Colors.grey.shade400)
+                                        ? const Icon(Icons.image_not_supported_outlined, color: Color(0xFF94A3B8), size: 20)
                                         : null,
                                   ),
                                   title: Text(
                                     product['name'] ?? 'Unnamed Product',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Color(0xFF1E293B),
+                                    ),
                                   ),
                                   subtitle: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Category: $categoryName'),
-                                      Text('Metal: $metalName $metalCarat'),
+                                      Text(
+                                        'Category: $categoryName',
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                      ),
+                                      Text(
+                                        'Metal: $metalName $metalCarat',
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                      ),
                                     ],
                                   ),
                                   trailing: Column(
@@ -465,32 +498,33 @@ class ProductSelectionDialog extends StatelessWidget {
                                     children: [
                                       Text(
                                         currencyFormat.format(price),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green.shade700,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF10B981),
+                                          fontSize: 13,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
+                                          horizontal: 6,
                                           vertical: 2,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.shade50,
+                                          color: const Color(0xFF10B981).withOpacity(0.1),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.add, size: 14, color: Colors.green.shade700),
+                                            const Icon(Icons.add_outlined, size: 12, color: Color(0xFF10B981)),
                                             const SizedBox(width: 2),
-                                            Text(
+                                            const Text(
                                               'Add',
                                               style: TextStyle(
-                                                color: Colors.green.shade700,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12,
+                                                color: Color(0xFF10B981),
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 11,
                                               ),
                                             ),
                                           ],

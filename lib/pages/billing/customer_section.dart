@@ -15,18 +15,11 @@ class CustomerSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,17 +31,18 @@ class CustomerSection extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.person,
-                      color: Colors.amber.shade700,
-                      size: 20,
+                    const Icon(
+                      Icons.person_outlined,
+                      color: Color(0xFF1E40AF),
+                      size: 18,
                     ),
                     const SizedBox(width: 8),
                     const Text(
                       'Customer Information',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0xFF1E293B),
                       ),
                     ),
                   ],
@@ -56,26 +50,26 @@ class CustomerSection extends StatelessWidget {
               ),
               TextButton.icon(
                 icon: Icon(
-                  selectedCustomer != null ? Icons.edit : Icons.add,
+                  selectedCustomer != null ? Icons.edit_outlined : Icons.add_outlined,
                   size: 16,
-                  color: Colors.amber.shade700,
+                  color: const Color(0xFF1E40AF),
                 ),
                 label: Text(
                   selectedCustomer != null ? 'Change' : 'Add',
-                  style: TextStyle(color: Colors.amber.shade700, fontSize: 13),
+                  style: const TextStyle(color: Color(0xFF1E40AF), fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 onPressed: onSelectCustomer,
                 style: TextButton.styleFrom(
-                  backgroundColor: Colors.amber.shade50,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  backgroundColor: const Color(0xFF1E40AF).withOpacity(0.1),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           
           if (selectedCustomer != null)
             Column(
@@ -84,36 +78,37 @@ class CustomerSection extends StatelessWidget {
                 Text(
                   selectedCustomer!['name'],
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.phone, size: 16, color: Colors.amber.shade700),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.phone_outlined, size: 14, color: Color(0xFF64748B)),
+                    const SizedBox(width: 6),
                     Text(
                       selectedCustomer!['phone'],
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade700,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.location_on, size: 16, color: Colors.amber.shade700),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         selectedCustomer!['address'],
-                        style: TextStyle(
-                          fontSize: 15, 
-                          color: Colors.grey.shade700,
+                        style: const TextStyle(
+                          fontSize: 13, 
+                          color: Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -123,21 +118,21 @@ class CustomerSection extends StatelessWidget {
             )
           else
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.person_outline, size: 24, color: Colors.amber.shade800),
-                  const SizedBox(width: 12),
-                  Text(
+                  const Icon(Icons.person_outline, size: 20, color: Color(0xFF94A3B8)),
+                  const SizedBox(width: 8),
+                  const Text(
                     'No customer selected',
                     style: TextStyle(
-                      color: Colors.amber.shade800,
+                      color: Color(0xFF64748B),
                       fontWeight: FontWeight.w500,
-                      fontSize: 16,
+                      fontSize: 13,
                     ),
                   ),
                 ],
@@ -169,8 +164,8 @@ class CustomerSelectionDialog extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
         ),
       ),
       child: StatefulBuilder(
@@ -183,22 +178,22 @@ class CustomerSelectionDialog extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       'Select Customer',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber.shade800,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Icons.close_outlined, color: Color(0xFF64748B), size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
-              const Divider(),
+              const Divider(color: Color(0xFFE2E8F0)),
               
               // Search bar
               Padding(
@@ -207,11 +202,21 @@ class CustomerSelectionDialog extends StatelessWidget {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search customers',
-                    prefixIcon: const Icon(Icons.search),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                    prefixIcon: const Icon(Icons.search_outlined, color: Color(0xFF64748B), size: 20),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
+                  style: const TextStyle(fontSize: 14),
                   onChanged: (value) {
                     setState(() {});
                   },
@@ -230,18 +235,29 @@ class CustomerSelectionDialog extends StatelessWidget {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF1E40AF),
+                          strokeWidth: 2,
+                        ),
+                      );
                     }
                     
                     if (snapshot.hasError) {
                       return Center(
-                        child: Text('Error loading customers: ${snapshot.error}'),
+                        child: Text(
+                          'Error loading customers: ${snapshot.error}',
+                          style: const TextStyle(color: Color(0xFFDC2626)),
+                        ),
                       );
                     }
                     
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return const Center(
-                        child: Text('No customers found'),
+                        child: Text(
+                          'No customers found',
+                          style: TextStyle(color: Color(0xFF64748B)),
+                        ),
                       );
                     }
                     
@@ -256,7 +272,10 @@ class CustomerSelectionDialog extends StatelessWidget {
                     
                     return filteredDocs.isEmpty
                         ? Center(
-                            child: Text('No customers matching "${_searchController.text}"'),
+                            child: Text(
+                              'No customers matching "${_searchController.text}"',
+                              style: const TextStyle(color: Color(0xFF64748B)),
+                            ),
                           )
                         : ListView.builder(
                             itemCount: filteredDocs.length,
@@ -267,17 +286,31 @@ class CustomerSelectionDialog extends StatelessWidget {
                               
                               return ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: Colors.amber.shade100,
+                                  backgroundColor: const Color(0xFF1E40AF).withOpacity(0.1),
                                   child: Text(
                                     customer['name'][0].toUpperCase(),
-                                    style: TextStyle(
-                                      color: Colors.amber.shade800,
-                                      fontWeight: FontWeight.bold,
+                                    style: const TextStyle(
+                                      color: Color(0xFF1E40AF),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
-                                title: Text(customer['name']),
-                                subtitle: Text(customer['phone']),
+                                title: Text(
+                                  customer['name'],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  customer['phone'],
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
                                 onTap: () {
                                   onCustomerSelected({
                                     'id': customerId,

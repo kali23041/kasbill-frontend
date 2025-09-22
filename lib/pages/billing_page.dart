@@ -253,7 +253,7 @@ class _BillingPageState extends State<BillingPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Bill #$invoiceNumber saved successfully'),
-              backgroundColor: Colors.green,
+              backgroundColor: const Color(0xFF10B981),
             ),
           );
           
@@ -296,6 +296,7 @@ class _BillingPageState extends State<BillingPage> {
     User? currentUser = _auth.currentUser;
     
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: currentUser != null && currentUser.email != null
           ? SafeArea(
               child: Stack(
@@ -304,7 +305,7 @@ class _BillingPageState extends State<BillingPage> {
                     children: [
                       // Header
                       Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(12.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -312,22 +313,25 @@ class _BillingPageState extends State<BillingPage> {
                               'Create Bill',
                               style: TextStyle(
                                 fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E293B),
+                                letterSpacing: -0.5,
                               ),
                             ),
                             Row(
                               children: [
                                 TextButton.icon(
-                                  icon: Icon(
-                                    Icons.history,
+                                  icon: const Icon(
+                                    Icons.history_outlined,
                                     size: 16,
-                                    color: Colors.amber.shade700,
+                                    color: Color(0xFF1E40AF),
                                   ),
-                                  label: Text(
+                                  label: const Text(
                                     'Sales',
                                     style: TextStyle(
-                                      color: Colors.amber.shade700,
+                                      color: Color(0xFF1E40AF),
                                       fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   onPressed: () {
@@ -339,33 +343,34 @@ class _BillingPageState extends State<BillingPage> {
                                     );
                                   },
                                   style: TextButton.styleFrom(
-                                    backgroundColor: Colors.amber.shade50,
+                                    backgroundColor: const Color(0xFF1E40AF).withOpacity(0.1),
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 TextButton.icon(
-                                  icon: Icon(
-                                    Icons.refresh,
+                                  icon: const Icon(
+                                    Icons.refresh_outlined,
                                     size: 16,
-                                    color: Colors.red.shade700,
+                                    color: Color(0xFFDC2626),
                                   ),
-                                  label: Text(
+                                  label: const Text(
                                     'Reset',
                                     style: TextStyle(
-                                      color: Colors.red.shade700,
+                                      color: Color(0xFFDC2626),
                                       fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   onPressed: _resetForm,
                                   style: TextButton.styleFrom(
-                                    backgroundColor: Colors.red.shade50,
+                                    backgroundColor: const Color(0xFFDC2626).withOpacity(0.1),
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
                                   ),
                                 ),
@@ -380,7 +385,7 @@ class _BillingPageState extends State<BillingPage> {
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.only(bottom: 80),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -389,20 +394,24 @@ class _BillingPageState extends State<BillingPage> {
                                   Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(12),
-                                    margin: const EdgeInsets.only(bottom: 16),
+                                    margin: const EdgeInsets.only(bottom: 8),
                                     decoration: BoxDecoration(
-                                      color: Colors.red.shade50,
+                                      color: const Color(0xFFFEF2F2),
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.red.shade300),
+                                      border: Border.all(color: const Color(0xFFFECACA)),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.error_outline, color: Colors.red.shade700),
+                                        const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 20),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             _errorMessage!,
-                                            style: TextStyle(color: Colors.red.shade700),
+                                            style: const TextStyle(
+                                              color: Color(0xFFDC2626),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -415,14 +424,14 @@ class _BillingPageState extends State<BillingPage> {
                                   date: DateTime.now(),
                                   dateFormat: dateFormat,
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 8),
                                 
                                 // Customer selection card
                                 CustomerSection(
                                   selectedCustomer: _selectedCustomer,
                                   onSelectCustomer: _showCustomerSelectionSheet,
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 8),
                                 
                                 // Product items section
                                 ProductSection(
@@ -432,7 +441,7 @@ class _BillingPageState extends State<BillingPage> {
                                   onChangeQuantity: _changeItemQuantity, 
                                   currencyFormat: currencyFormat,
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 8),
                                 
                                 // Bill summary section
                                 BillSummarySection(
@@ -470,42 +479,37 @@ class _BillingPageState extends State<BillingPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 2,
-                            blurRadius: 10,
-                            offset: const Offset(0, -3),
-                          ),
-                        ],
+                        border: Border(
+                          top: BorderSide(color: const Color(0xFFE2E8F0)),
+                        ),
                       ),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
                       child: SizedBox(
-                        height: 50,
+                        height: 40,
                         child: ElevatedButton(
                           onPressed: _saveBill,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber.shade700,
+                            backgroundColor: const Color(0xFF1E40AF),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             elevation: 0,
                           ),
                           child: _isProcessing 
                               ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
+                                  width: 16,
+                                  height: 16,
                                   child: CircularProgressIndicator(
                                     color: Colors.white,
-                                    strokeWidth: 2.5,
+                                    strokeWidth: 2,
                                   ),
                                 )
                               : const Text(
                                   'Save Bill',
                                   style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                         ),
@@ -516,7 +520,13 @@ class _BillingPageState extends State<BillingPage> {
               ),
             )
           : const Center(
-              child: Text('You need to be logged in to create bills'),
+              child: Text(
+                'You need to be logged in to create bills',
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 16,
+                ),
+              ),
             ),
     );
   }

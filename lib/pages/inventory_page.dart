@@ -28,12 +28,13 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
     User? currentUser = _auth.currentUser;
     
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Stack(
         children: [
           // Main content
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -45,7 +46,7 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                         ? Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.close),
+                                icon: const Icon(Icons.close_outlined, color: Color(0xFF64748B), size: 20),
                                 onPressed: () {
                                   setState(() {
                                     _isSelectionMode = false;
@@ -56,8 +57,9 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                               Text(
                                 '${_selectedProducts.length} Selected',
                                 style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1E293B),
                                 ),
                               ),
                             ],
@@ -65,20 +67,22 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                         : const Text(
                             'Inventory',
                             style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: -0.5,
                             ),
                           ),
                       if (_isSelectionMode)
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete_outlined, color: Color(0xFFDC2626), size: 20),
                           onPressed: _selectedProducts.isNotEmpty
                             ? _deleteSelectedProducts
                             : null,
                         )
                       else
                         IconButton(
-                          icon: const Icon(Icons.select_all),
+                          icon: const Icon(Icons.select_all_outlined, color: Color(0xFF64748B), size: 20),
                           onPressed: () {
                             setState(() {
                               _isSelectionMode = true;
@@ -87,7 +91,7 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                         ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                   
                   // Product listing section
                   Expanded(
@@ -101,14 +105,19 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                               .snapshots(),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF1E40AF),
+                                  strokeWidth: 2,
+                                ),
+                              );
                             }
                             
                             if (snapshot.hasError) {
                               return Center(
                                 child: Text(
                                   'Error loading products: ${snapshot.error}',
-                                  style: const TextStyle(color: Colors.red),
+                                  style: const TextStyle(color: Color(0xFFDC2626)),
                                 ),
                               );
                             }
@@ -120,23 +129,24 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                   children: [
                                     Icon(
                                       Icons.inventory_2_outlined,
-                                      size: 80,
-                                      color: Colors.grey.shade400,
+                                      size: 64,
+                                      color: const Color(0xFF94A3B8),
                                     ),
-                                    const SizedBox(height: 16),
-                                    Text(
+                                    const SizedBox(height: 12),
+                                    const Text(
                                       'No inventory items yet',
                                       style: TextStyle(
-                                        fontSize: 20,
-                                        color: Colors.grey.shade600,
+                                        fontSize: 18,
+                                        color: Color(0xFF64748B),
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
+                                    const SizedBox(height: 6),
+                                    const Text(
                                       'Tap the + button to start adding items',
                                       style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey.shade500,
+                                        fontSize: 14,
+                                        color: Color(0xFF94A3B8),
                                       ),
                                     ),
                                   ],
@@ -150,8 +160,8 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
                                 childAspectRatio: 0.75,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 6,
+                                mainAxisSpacing: 6,
                               ),
                               itemCount: products.length,
                               itemBuilder: (context, index) {
@@ -201,17 +211,10 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                       Container(
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(8),
                                           border: _isSelectionMode && _selectedProducts.contains(productId)
-                                            ? Border.all(color: Colors.blue, width: 2)
-                                            : null,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.grey.withOpacity(0.1),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 5),
-                                            ),
-                                          ],
+                                            ? Border.all(color: const Color(0xFF1E40AF), width: 2)
+                                            : Border.all(color: const Color(0xFFE2E8F0)),
                                         ),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,8 +225,8 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                               child: Container(
                                                 decoration: BoxDecoration(
                                                   borderRadius: const BorderRadius.only(
-                                                    topLeft: Radius.circular(12),
-                                                    topRight: Radius.circular(12),
+                                                    topLeft: Radius.circular(8),
+                                                    topRight: Radius.circular(8),
                                                   ),
                                                   image: images.isNotEmpty
                                                     ? DecorationImage(
@@ -233,14 +236,14 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                                         fit: BoxFit.cover,
                                                       )
                                                     : null,
-                                                  color: Colors.grey.shade100,
+                                                  color: const Color(0xFFF1F5F9),
                                                 ),
                                                 child: images.isEmpty
                                                   ? Center(
                                                       child: Icon(
                                                         Icons.image_not_supported_outlined,
-                                                        color: Colors.grey.shade400,
-                                                        size: 36,
+                                                        color: const Color(0xFF94A3B8),
+                                                        size: 28,
                                                       ),
                                                     )
                                                   : null,
@@ -251,7 +254,7 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                             Expanded(
                                               flex: 2,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding: const EdgeInsets.all(6.0),
                                                 child: Column(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -260,8 +263,9 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                                     Text(
                                                       name,
                                                       style: const TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: 13,
+                                                        color: Color(0xFF1E293B),
                                                       ),
                                                       maxLines: 1,
                                                       overflow: TextOverflow.ellipsis,
@@ -270,9 +274,9 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                                     // Category & Metal info
                                                     Text(
                                                       '$category · $metal',
-                                                      style: TextStyle(
-                                                        color: Colors.grey.shade600,
-                                                        fontSize: 12,
+                                                      style: const TextStyle(
+                                                        color: Color(0xFF64748B),
+                                                        fontSize: 11,
                                                       ),
                                                       maxLines: 1,
                                                       overflow: TextOverflow.ellipsis,
@@ -281,10 +285,10 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                                     // Price
                                                     Text(
                                                       '₹${price.toStringAsFixed(2)}',
-                                                      style: TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.green.shade700,
-                                                        fontSize: 16,
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.w700,
+                                                        color: Color(0xFF10B981),
+                                                        fontSize: 14,
                                                       ),
                                                     ),
                                                   ],
@@ -296,16 +300,16 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                       ),
                                       if (_isSelectionMode)
                                         Positioned(
-                                          top: 8,
-                                          right: 8,
+                                          top: 6,
+                                          right: 6,
                                           child: Container(
                                             decoration: BoxDecoration(
                                               color: _selectedProducts.contains(productId)
-                                                ? Colors.blue
+                                                ? const Color(0xFF1E40AF)
                                                 : Colors.white,
                                               shape: BoxShape.circle,
                                               border: Border.all(
-                                                color: Colors.blue,
+                                                color: const Color(0xFF1E40AF),
                                                 width: 2,
                                               ),
                                             ),
@@ -313,7 +317,7 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                                               padding: const EdgeInsets.all(2.0),
                                               child: Icon(
                                                 Icons.check,
-                                                size: 16,
+                                                size: 14,
                                                 color: _selectedProducts.contains(productId)
                                                   ? Colors.white
                                                   : Colors.transparent,
@@ -376,14 +380,14 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                   children: [
                     Container(
                       margin: const EdgeInsets.only(right: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.purple.shade500,
-                        borderRadius: BorderRadius.circular(20),
+                        color: const Color(0xFF1E40AF),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Text(
                         'Add Category',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ),
                     FloatingActionButton.small(
@@ -397,8 +401,8 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                           MaterialPageRoute(builder: (context) => const AddCategoryPage()),
                         );
                       },
-                      backgroundColor: Colors.purple.shade500,
-                      child: const Icon(Icons.category),
+                      backgroundColor: const Color(0xFF1E40AF),
+                      child: const Icon(Icons.category_outlined, size: 18),
                     ),
                   ],
                 ),
@@ -420,14 +424,14 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                   children: [
                     Container(
                       margin: const EdgeInsets.only(right: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade500,
-                        borderRadius: BorderRadius.circular(20),
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Text(
                         'Add Metal',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ),
                     FloatingActionButton.small(
@@ -441,8 +445,8 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                           MaterialPageRoute(builder: (context) => const AddMetalPage()),
                         );
                       },
-                      backgroundColor: Colors.blue.shade500,
-                      child: const Icon(Icons.monitor_weight),
+                      backgroundColor: const Color(0xFF10B981),
+                      child: const Icon(Icons.monitor_weight_outlined, size: 18),
                     ),
                   ],
                 ),
@@ -464,14 +468,14 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                   children: [
                     Container(
                       margin: const EdgeInsets.only(right: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.teal.shade500,
-                        borderRadius: BorderRadius.circular(20),
+                        color: const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Text(
                         'Add Gemstone',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ),
                     FloatingActionButton.small(
@@ -485,8 +489,8 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                           MaterialPageRoute(builder: (context) => const AddGemstonePage()),
                         );
                       },
-                      backgroundColor: Colors.teal.shade500,
-                      child: const Icon(Icons.diamond),
+                      backgroundColor: const Color(0xFFF59E0B),
+                      child: const Icon(Icons.diamond_outlined, size: 18),
                     ),
                   ],
                 ),
@@ -508,14 +512,14 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                   children: [
                     Container(
                       margin: const EdgeInsets.only(right: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade500,
-                        borderRadius: BorderRadius.circular(20),
+                        color: const Color(0xFF8B5CF6),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Text(
                         'Add Product',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ),
                     FloatingActionButton.small(
@@ -529,8 +533,8 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                           MaterialPageRoute(builder: (context) => const AddProductPage()),
                         );
                       },
-                      backgroundColor: Colors.green.shade500,
-                      child: const Icon(Icons.add_shopping_cart),
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      child: const Icon(Icons.add_shopping_cart_outlined, size: 18),
                     ),
                   ],
                 ),
@@ -545,11 +549,11 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
                 _isDialOpen = !_isDialOpen;
               });
             },
-            backgroundColor: Colors.amber.shade700,
+            backgroundColor: const Color(0xFF1E40AF),
             child: AnimatedRotation(
               turns: _isDialOpen ? 0.125 : 0, // 45 degrees rotation
               duration: const Duration(milliseconds: 250),
-              child: const Icon(Icons.add),
+              child: const Icon(Icons.add, color: Colors.white),
             ),
           ),
         ],
@@ -565,22 +569,39 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             title: Text(
               'Delete ${_selectedProducts.length} Products',
-              style: TextStyle(color: Colors.red.shade800),
+              style: const TextStyle(
+                color: Color(0xFFDC2626),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             content: const Text(
               'Are you sure you want to delete the selected products? This action cannot be undone.',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 14,
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF64748B),
+                ),
+                child: const Text('Cancel', style: TextStyle(fontSize: 13)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFDC2626),
+                ),
+                child: const Text('Delete', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -608,7 +629,7 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Selected products deleted successfully'),
-                backgroundColor: Colors.red,
+                backgroundColor: Color(0xFF10B981),
               ),
             );
           }
@@ -618,7 +639,7 @@ class _InventoryPageState extends State<InventoryPage> with SingleTickerProvider
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to delete products: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
     }

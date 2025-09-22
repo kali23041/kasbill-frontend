@@ -29,23 +29,18 @@ class LowStockSection extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
-            margin: const EdgeInsets.only(bottom: 24.0),
-            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.shade100.withOpacity(0.5),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            height: 100,
+            height: 80,
             child: Center(
               child: CircularProgressIndicator(
-                color: Colors.red.shade800,
+                color: const Color(0xFF1E40AF),
+                strokeWidth: 2,
               ),
             ),
           );
@@ -53,29 +48,24 @@ class LowStockSection extends StatelessWidget {
         
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Container(
-            margin: const EdgeInsets.only(bottom: 24.0),
-            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.green.shade100.withOpacity(0.5),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green.shade700),
+                const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
+                  child: const Text(
                     'All products have sufficient stock',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF10B981),
+                      fontSize: 13,
                     ),
                   ),
                 ),
@@ -85,18 +75,12 @@ class LowStockSection extends StatelessWidget {
         }
         
         return Container(
-          margin: const EdgeInsets.only(bottom: 24.0),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 8.0),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.red.shade50,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.red.shade100.withOpacity(0.5),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFFECACA)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,14 +90,14 @@ class LowStockSection extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.warning, color: Colors.red.shade800),
-                      const SizedBox(width: 8),
-                      Text(
+                      const Icon(Icons.warning_outlined, color: Color(0xFFDC2626), size: 18),
+                      const SizedBox(width: 6),
+                      const Text(
                         'Low Stock Alert',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red.shade800,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFDC2626),
                         ),
                       ),
                     ],
@@ -125,17 +109,18 @@ class LowStockSection extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => const AddProductPage()),
                       );
                     },
-                    child: Text(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    ),
+                    child: const Text(
                       'Add Stock',
-                      style: TextStyle(
-                        color: Colors.red.shade800,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 6),
               
               Column(
                 children: snapshot.data!.docs.map((doc) {
@@ -164,7 +149,7 @@ class LowStockSection extends StatelessWidget {
   // Low stock item row
   Widget _buildLowStockItem(String name, String count) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -172,14 +157,16 @@ class LowStockSection extends StatelessWidget {
             name,
             style: const TextStyle(
               fontWeight: FontWeight.w500,
+              fontSize: 13,
+              color: Color(0xFF1E293B),
             ),
           ),
           Text(
             count,
-            style: TextStyle(
-              color: Colors.red.shade800,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+            style: const TextStyle(
+              color: Color(0xFFDC2626),
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
           ),
         ],

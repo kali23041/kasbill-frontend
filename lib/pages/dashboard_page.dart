@@ -69,8 +69,9 @@ class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveCl
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
         ),
         titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         contentPadding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
@@ -79,22 +80,22 @@ class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveCl
           children: [
             Row(
               children: [
-                Icon(Icons.update, color: Colors.amber.shade800, size: 24),
+                const Icon(Icons.update_outlined, color: Color(0xFF1E40AF), size: 20),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
+                  child: const Text(
                     'Update Metal Rates',
                     style: TextStyle(
-                      color: Colors.amber.shade800,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Divider(color: Colors.grey.shade300),
+            const Divider(color: Color(0xFFE2E8F0)),
           ],
         ),
         content: Container(
@@ -103,14 +104,14 @@ class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveCl
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Would you like to update today\'s metal rates?',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'This will automatically update all product prices based on current metal rates.',
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
             ],
           ),
@@ -118,10 +119,10 @@ class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveCl
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Later',
-              style: TextStyle(color: Colors.grey.shade700),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF64748B),
             ),
+            child: const Text('Later', style: TextStyle(fontSize: 13)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -131,13 +132,13 @@ class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveCl
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber.shade700,
+              backgroundColor: const Color(0xFF1E40AF),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
             ),
-            child: const Text('Update Now'),
+            child: const Text('Update Now', style: TextStyle(fontSize: 13)),
           ),
         ],
       ),
@@ -152,74 +153,81 @@ class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveCl
     final User? currentUser = FirebaseAuth.instance.currentUser;
     final String userName = currentUser?.displayName ?? 'Jewelry Manager';
     
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with greeting and logout button
-          Container(
-            margin: const EdgeInsets.only(bottom: 24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Kasbill By Kartik Sabale',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with greeting and logout button
+            Container(
+              margin: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Kasbill By Kartik Sabale',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      userName,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber.shade800,
+                      const SizedBox(height: 4),
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.logout, color: Colors.grey),
-                  onPressed: () async {
-                    try {
-                      await FirebaseAuth.instance.signOut();
-                      if (context.mounted) {
-                        Navigator.pushReplacementNamed(context, '/login');
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B), size: 20),
+                    onPressed: () async {
+                      try {
+                        await FirebaseAuth.instance.signOut();
+                        if (context.mounted) {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error signing out: $e'),
+                              backgroundColor: const Color(0xFFEF4444),
+                            ),
+                          );
+                        }
                       }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error signing out: $e')),
-                        );
-                      }
-                    }
-                  },
-                ),
-              ],
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
           
-          // Summary Cards - replaced with AnalyticsSection
-          AnalyticsSection(currencyFormat: currencyFormat),
-          
-          // Quick Actions - replaced with QuickActionsSection
-          const QuickActionsSection(),
-          
-          // Recent Sales Section - replaced with RecentSalesSection
-          RecentSalesSection(currencyFormat: currencyFormat),
-          
-          // Low Stock Alert - replaced with LowStockSection
-          const LowStockSection(),
-          
-          // Upcoming Orders - replaced with UpcomingOrdersSection
-          // const UpcomingOrdersSection(),
-        ],
+            // Summary Cards - replaced with AnalyticsSection
+            AnalyticsSection(currencyFormat: currencyFormat),
+            
+            // Quick Actions - replaced with QuickActionsSection
+            const QuickActionsSection(),
+            
+            // Recent Sales Section - replaced with RecentSalesSection
+            RecentSalesSection(currencyFormat: currencyFormat),
+            
+            // Low Stock Alert - replaced with LowStockSection
+            const LowStockSection(),
+            
+            // Upcoming Orders - replaced with UpcomingOrdersSection
+            // const UpcomingOrdersSection(),
+          ],
+        ),
       ),
     );
   }

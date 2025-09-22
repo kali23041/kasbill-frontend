@@ -16,40 +16,34 @@ class BillHeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.receipt,
-                color: Colors.amber.shade700,
-                size: 20,
+              const Icon(
+                Icons.receipt_outlined,
+                color: Color(0xFF1E40AF),
+                size: 18,
               ),
               const SizedBox(width: 8),
               const Text(
                 'Invoice Details',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Color(0xFF1E293B),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           // Invoice number and date
           Row(
             children: [
@@ -60,17 +54,18 @@ class BillHeaderSection extends StatelessWidget {
                     const Text(
                       'Invoice Number',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       invoiceNumber,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.amber.shade800,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: Color(0xFF1E40AF),
                       ),
                     ),
                   ],
@@ -83,15 +78,18 @@ class BillHeaderSection extends StatelessWidget {
                     const Text(
                       'Date',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       dateFormat.format(date),
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0xFF1E293B),
                       ),
                     ),
                   ],

@@ -21,7 +21,7 @@ class RecentSalesSection extends StatelessWidget {
     final dateFormat = DateFormat('dd MMM, hh:mm a');
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 24.0),
+      margin: const EdgeInsets.only(bottom: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -31,8 +31,9 @@ class RecentSalesSection extends StatelessWidget {
               const Text(
                 'Recent Sales',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
                 ),
               ),
               TextButton(
@@ -42,16 +43,18 @@ class RecentSalesSection extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => const BillsListPage()),
                   );
                 },
-                child: Text(
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF1E40AF),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                ),
+                child: const Text(
                   'View All',
-                  style: TextStyle(
-                    color: Colors.amber.shade800,
-                  ),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           
           StreamBuilder<QuerySnapshot>(
             stream: _firestore
@@ -82,29 +85,23 @@ class RecentSalesSection extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 2,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Center(
                     child: Column(
                       children: [
                         Icon(
-                          Icons.receipt_long,
-                          size: 40,
-                          color: Colors.grey.shade400,
+                          Icons.receipt_long_outlined,
+                          size: 32,
+                          color: const Color(0xFF94A3B8),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        const Text(
                           'No sales recorded yet',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: Color(0xFF64748B),
+                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -156,7 +153,7 @@ class RecentSalesSection extends StatelessWidget {
                           amount: currencyFormat.format(total),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                     ],
                   );
                 }).toList(),
@@ -176,41 +173,34 @@ class RecentSalesSection extends StatelessWidget {
     required String amount,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: Colors.amber.shade100,
+              color: const Color(0xFF1E40AF).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 customerName.substring(0, 1),
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber.shade800,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E40AF),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,23 +208,25 @@ class RecentSalesSection extends StatelessWidget {
                 Text(
                   customerName,
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   itemName,
                   style: const TextStyle(
-                    color: Colors.grey,
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF94A3B8),
                   ),
                 ),
               ],
@@ -243,8 +235,9 @@ class RecentSalesSection extends StatelessWidget {
           Text(
             amount,
             style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: Color(0xFF1E293B),
             ),
           ),
         ],

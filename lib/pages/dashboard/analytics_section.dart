@@ -58,24 +58,24 @@ class AnalyticsSection extends StatelessWidget {
             String salesChange = billCount > 0 ? "+${billCount} bills" : "No sales yet";
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 24.0),
+              margin: const EdgeInsets.only(bottom: 8.0),
               child: Row(
                 children: [
                   _buildSummaryCard(
                     context,
                     title: 'Total Sales',
                     value: currencyFormat.format(totalSales),
-                    icon: Icons.attach_money,
-                    color: Colors.green,
+                    icon: Icons.trending_up_outlined,
+                    color: const Color(0xFF10B981),
                     change: salesChange,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   _buildSummaryCard(
                     context,
                     title: 'Inventory Value',
                     value: currencyFormat.format(inventoryValue),
-                    icon: Icons.diamond,
-                    color: Colors.amber.shade800,
+                    icon: Icons.inventory_outlined,
+                    color: const Color(0xFF1E40AF),
                     change: '${productSnapshot.hasData ? productSnapshot.data!.docs.length : 0} items',
                   ),
                 ],
@@ -98,18 +98,11 @@ class AnalyticsSection extends StatelessWidget {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 2,
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,34 +113,36 @@ class AnalyticsSection extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                Icon(icon, color: color, size: 20),
+                Icon(icon, color: color, size: 18),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Text(
               value,
               style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E293B),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 change,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: color,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

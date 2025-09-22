@@ -76,10 +76,17 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     User? currentUser = _auth.currentUser;
     
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF1E40AF),
+                strokeWidth: 2,
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -90,44 +97,40 @@ class _SettingsPageState extends State<SettingsPage> {
                     const Text(
                       'Settings',
                       style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.5,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.logout, color: Colors.grey),
+                      icon: const Icon(Icons.logout_outlined, color: Color(0xFF64748B), size: 20),
                       onPressed: _signOut,
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 
                 // User Profile Card
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.amber.shade700, Colors.amber.shade400],
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.amber.shade200.withOpacity(0.5),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(12.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // User avatar
                         CircleAvatar(
-                          radius: 50,
+                          radius: 30,
                           backgroundColor: Colors.white,
                           backgroundImage: currentUser?.photoURL != null
                               ? NetworkImage(currentUser!.photoURL!)
@@ -135,75 +138,69 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: currentUser?.photoURL == null
                               ? Text(
                                   _userData?['displayName']?.substring(0, 1).toUpperCase() ?? 'U',
-                                  style: TextStyle(
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber.shade800,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1E40AF),
                                   ),
                                 )
                               : null,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         
                         // User name
                         Text(
                           _userData?['displayName'] ?? 'User',
                           style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
                         
                         // User email
                         Text(
                           _userData?['email'] ?? '',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 13,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         
                         // Membership badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: _userData?['membership'] == 'premium'
-                                ? Colors.purple.shade800
+                                ? const Color(0xFF8B5CF6)
                                 : Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 _userData?['membership'] == 'premium'
-                                    ? Icons.workspace_premium
-                                    : Icons.card_membership,
+                                    ? Icons.workspace_premium_outlined
+                                    : Icons.card_membership_outlined,
                                 color: _userData?['membership'] == 'premium'
-                                    ? Colors.amber
-                                    : Colors.amber.shade800,
-                                size: 18,
+                                    ? Colors.white
+                                    : const Color(0xFF1E40AF),
+                                size: 14,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 4),
                               Text(
                                 _userData?['membership'] == 'premium'
                                     ? 'Premium Member'
                                     : 'Free Member',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11,
                                   color: _userData?['membership'] == 'premium'
                                       ? Colors.white
-                                      : Colors.amber.shade800,
+                                      : const Color(0xFF1E40AF),
                                 ),
                               ),
                             ],
@@ -214,7 +211,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 
                 // Account Settings Section
                 _buildSettingSection(
@@ -297,7 +294,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 
                 // App Settings Section
                 _buildSettingSection(
@@ -317,7 +314,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 
                 // Help & Support Section
                 _buildSettingSection(
@@ -356,22 +353,23 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 
                 // App Version
                 Center(
                   child: Text(
                     'Version 1.0.0',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
               ],
             ),
-          );
+          ),
+    );
   }
   
   Widget _buildSettingSection({required String title, required List<Widget> children}) {
@@ -379,28 +377,21 @@ class _SettingsPageState extends State<SettingsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+          padding: const EdgeInsets.only(left: 4.0, bottom: 6.0),
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Column(
             children: children,
@@ -418,24 +409,24 @@ class _SettingsPageState extends State<SettingsPage> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: const Color(0xFF1E40AF).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                color: Colors.amber.shade800,
-                size: 22,
+                color: const Color(0xFF1E40AF),
+                size: 18,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,25 +434,26 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                   if (subtitle != null) 
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
                       ),
                     ),
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey.shade400,
-              size: 16,
+            const Icon(
+              Icons.arrow_forward_ios_outlined,
+              color: Color(0xFF94A3B8),
+              size: 14,
             ),
           ],
         ),

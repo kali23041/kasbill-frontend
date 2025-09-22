@@ -36,47 +36,41 @@ class BillSummarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.receipt_long,
-                color: Colors.purple.shade700,
-                size: 20,
+              const Icon(
+                Icons.receipt_long_outlined,
+                color: Color(0xFF8B5CF6),
+                size: 18,
               ),
               const SizedBox(width: 8),
               const Text(
                 'Bill Summary',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Color(0xFF1E293B),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           
           // Subtotal
           _buildSummaryRow(
             'Subtotal',
             currencyFormat.format(subtotal),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           
           // Discount
           Row(
@@ -85,8 +79,10 @@ class BillSummarySection extends StatelessWidget {
                 flex: 2,
                 child: Text(
                   'Discount',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -94,24 +90,33 @@ class BillSummarySection extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 60,
-                      height: 40,
-                      margin: const EdgeInsets.only(right: 8),
+                      width: 50,
+                      height: 32,
+                      margin: const EdgeInsets.only(right: 6),
                       child: TextField(
                         controller: discountController,
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12),
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.grey.shade50,
+                          fillColor: const Color(0xFFF1F5F9),
                           contentPadding: EdgeInsets.zero,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF1E40AF),
+                              width: 2,
                             ),
                           ),
                           suffixText: '%',
+                          suffixStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ),
                     ),
@@ -119,9 +124,10 @@ class BillSummarySection extends StatelessWidget {
                       child: Text(
                         '- ${currencyFormat.format((discount / 100) * subtotal)}',
                         textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red.shade700,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFDC2626),
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -130,7 +136,7 @@ class BillSummarySection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           
           // Tax
           Row(
@@ -139,8 +145,10 @@ class BillSummarySection extends StatelessWidget {
                 flex: 2,
                 child: Text(
                   'Tax (GST)',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -148,24 +156,33 @@ class BillSummarySection extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 60,
-                      height: 40,
-                      margin: const EdgeInsets.only(right: 8),
+                      width: 50,
+                      height: 32,
+                      margin: const EdgeInsets.only(right: 6),
                       child: TextField(
                         controller: taxController,
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12),
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.grey.shade50,
+                          fillColor: const Color(0xFFF1F5F9),
                           contentPadding: EdgeInsets.zero,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF1E40AF),
+                              width: 2,
                             ),
                           ),
                           suffixText: '%',
+                          suffixStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ),
                     ),
@@ -174,7 +191,9 @@ class BillSummarySection extends StatelessWidget {
                         currencyFormat.format((tax / 100) * (subtotal - (discount / 100) * subtotal)),
                         textAlign: TextAlign.right,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          color: Color(0xFF1E293B),
                         ),
                       ),
                     ),
@@ -183,7 +202,7 @@ class BillSummarySection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           
           // Making Charge
           Row(
@@ -192,8 +211,10 @@ class BillSummarySection extends StatelessWidget {
                 flex: 2,
                 child: Text(
                   'Additional Charges',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -202,28 +223,37 @@ class BillSummarySection extends StatelessWidget {
                   controller: additionalChargesController,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.right,
+                  style: const TextStyle(fontSize: 12),
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: const Color(0xFFF1F5F9),
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                      horizontal: 8,
+                      vertical: 6,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1E40AF),
+                        width: 2,
                       ),
                     ),
                     prefixText: '₹',
+                    prefixStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          const Divider(color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 8),
           
           // Total amount
           Row(
@@ -233,58 +263,71 @@ class BillSummarySection extends StatelessWidget {
                 child: Text(
                   'Total Amount',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
               ),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
+                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
                   ),
                   child: Text(
                     currencyFormat.format(total),
                     textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.green.shade800,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: Color(0xFF10B981),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           
           // Payment method
           const Text(
             'Payment Method',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Color(0xFF1E293B),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Wrap(
-            spacing: 8,
+            spacing: 6,
+            runSpacing: 6,
             children: paymentMethods.map((method) {
               final isSelected = paymentMethod == method;
               return ChoiceChip(
-                label: Text(method),
+                label: Text(
+                  method,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
                 selected: isSelected,
-                selectedColor: Colors.amber.shade100,
+                selectedColor: const Color(0xFF1E40AF).withOpacity(0.1),
+                backgroundColor: const Color(0xFFF1F5F9),
                 labelStyle: TextStyle(
                   color: isSelected
-                      ? Colors.amber.shade900
-                      : Colors.grey.shade700,
-                  fontWeight: isSelected
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+                      ? const Color(0xFF1E40AF)
+                      : const Color(0xFF64748B),
+                ),
+                side: BorderSide(
+                  color: isSelected
+                      ? const Color(0xFF1E40AF)
+                      : const Color(0xFFE2E8F0),
+                  width: 1,
                 ),
                 onSelected: (selected) {
                   if (selected) {
@@ -294,18 +337,35 @@ class BillSummarySection extends StatelessWidget {
               );
             }).toList(),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           
           // Notes
           TextField(
             controller: notesController,
             maxLines: 3,
+            style: const TextStyle(fontSize: 14),
             decoration: InputDecoration(
               labelText: 'Notes (Optional)',
-              hintText: 'Add any additional notes or comments',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+              labelStyle: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 12,
               ),
+              hintText: 'Add any additional notes or comments',
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 13,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
           ),
         ],
@@ -320,8 +380,10 @@ class BillSummarySection extends StatelessWidget {
           flex: 2,
           child: Text(
             label,
-            style: TextStyle(
-              color: Colors.grey.shade700,
+            style: const TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -330,7 +392,9 @@ class BillSummarySection extends StatelessWidget {
             value,
             textAlign: TextAlign.right,
             style: const TextStyle(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              color: Color(0xFF1E293B),
             ),
           ),
         ),

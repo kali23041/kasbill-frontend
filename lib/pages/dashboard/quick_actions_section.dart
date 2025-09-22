@@ -9,26 +9,27 @@ class QuickActionsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24.0),
+      margin: const EdgeInsets.only(bottom: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Quick Actions',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildQuickActionCard(
                 context,
                 title: 'New Sale',
-                icon: Icons.point_of_sale,
-                color: Colors.blue,
+                icon: Icons.point_of_sale_outlined,
+                color: const Color(0xFF10B981),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -40,7 +41,7 @@ class QuickActionsSection extends StatelessWidget {
                 context,
                 title: 'Add Item',
                 icon: Icons.add_circle_outline,
-                color: Colors.purple,
+                color: const Color(0xFF1E40AF),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -51,8 +52,8 @@ class QuickActionsSection extends StatelessWidget {
               _buildQuickActionCard(
                 context,
                 title: 'New Loan',
-                icon: Icons.monetization_on,
-                color: Colors.teal,
+                icon: Icons.account_balance_wallet_outlined,
+                color: const Color(0xFFF59E0B),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -79,24 +80,17 @@ class QuickActionsSection extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: MediaQuery.of(context).size.width / 3.5,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 2,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
                 shape: BoxShape.circle,
@@ -104,16 +98,17 @@ class QuickActionsSection extends StatelessWidget {
               child: Icon(
                 icon,
                 color: color,
-                size: 24,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
               ),
             ),
           ],

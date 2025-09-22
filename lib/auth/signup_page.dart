@@ -167,61 +167,68 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              // Logo and Title
+              const SizedBox(height: 32),
+              // Title Section
               Column(
                 children: [
-                  Icon(
-                    Icons.diamond,
-                    size: 70,
-                    color: Colors.amber.shade800,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
+                  const Text(
                     'Create Account',
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber.shade800,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
                     'Sign up to get started',
                     style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
+                      fontSize: 15,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
               
               if (_errorMessage != null)
                 Container(
                   padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 20),
+                  margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.shade100.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Color(0xFFDC2626),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            color: Color(0xFFDC2626),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: TextStyle(color: Colors.red.shade900),
                   ),
                 ),
                 
@@ -236,21 +243,25 @@ class _SignupPageState extends State<SignupPage> {
                         labelText: 'Full Name',
                         hintText: 'Enter your full name',
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: Colors.white,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
-                        prefixIcon: const Icon(Icons.person),
+                        prefixIcon: const Icon(Icons.person_outline, size: 20, color: Color(0xFF64748B)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.amber.shade500, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 2),
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
                       ),
+                      style: const TextStyle(fontSize: 14),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your name';
@@ -267,22 +278,26 @@ class _SignupPageState extends State<SignupPage> {
                         labelText: 'Email',
                         hintText: 'Enter your email',
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: Colors.white,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
-                        prefixIcon: const Icon(Icons.email),
+                        prefixIcon: const Icon(Icons.email_outlined, size: 20, color: Color(0xFF64748B)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.amber.shade500, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 2),
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
                       ),
                       keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(fontSize: 14),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
@@ -303,26 +318,27 @@ class _SignupPageState extends State<SignupPage> {
                         labelText: 'Password',
                         hintText: 'Create a password',
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: Colors.white,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
-                        prefixIcon: const Icon(Icons.lock),
+                        prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.amber.shade500, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 2),
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey,
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: const Color(0xFF64748B),
+                            size: 20,
                           ),
                           onPressed: () {
                             setState(() {
@@ -330,7 +346,11 @@ class _SignupPageState extends State<SignupPage> {
                             });
                           },
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
                       ),
+                      style: const TextStyle(fontSize: 14),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a password';
@@ -351,26 +371,27 @@ class _SignupPageState extends State<SignupPage> {
                         labelText: 'Confirm Password',
                         hintText: 'Confirm your password',
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: Colors.white,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
-                        prefixIcon: const Icon(Icons.lock_outline),
+                        prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.amber.shade500, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 2),
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isConfirmPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey,
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: const Color(0xFF64748B),
+                            size: 20,
                           ),
                           onPressed: () {
                             setState(() {
@@ -378,7 +399,11 @@ class _SignupPageState extends State<SignupPage> {
                             });
                           },
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
                       ),
+                      style: const TextStyle(fontSize: 14),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please confirm your password';
@@ -401,7 +426,7 @@ class _SignupPageState extends State<SignupPage> {
                               _acceptedTerms = value ?? false;
                             });
                           },
-                          activeColor: Colors.amber.shade700,
+                          activeColor: const Color(0xFF1E40AF),
                         ),
                         Expanded(
                           child: GestureDetector(
@@ -414,21 +439,21 @@ class _SignupPageState extends State<SignupPage> {
                               children: [
                                 const Text(
                                   'I accept the ',
-                                  style: TextStyle(fontSize: 14),
+                                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                                 ),
                                 Text(
                                   'Terms & Conditions',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber.shade800,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1E40AF),
                                   ),
                                 ),
                                 IconButton(
-                                  icon: Icon(
+                                  icon: const Icon(
                                     Icons.info_outline,
-                                    size: 18,
-                                    color: Colors.amber.shade800,
+                                    size: 16,
+                                    color: Color(0xFF1E40AF),
                                   ),
                                   constraints: const BoxConstraints(),
                                   padding: const EdgeInsets.only(left: 4),
@@ -441,20 +466,20 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                     
                     // Sign Up button with shadow and rounded corners
                     SizedBox(
                       width: double.infinity,
-                      height: 55,
+                      height: 48,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber.shade700,
+                          backgroundColor: const Color(0xFF1E40AF),
                           foregroundColor: Colors.white,
-                          elevation: 3,
-                          shadowColor: Colors.amber.withOpacity(0.5),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         onPressed: _isLoading || !_acceptedTerms
@@ -467,12 +492,13 @@ class _SignupPageState extends State<SignupPage> {
                         child: _isLoading
                             ? const CircularProgressIndicator(
                                 color: Colors.white,
+                                strokeWidth: 2,
                               )
                             : const Text(
                                 'Sign Up',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                       ),
@@ -481,77 +507,89 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               
               // Divider with better spacing
               Row(
                 children: [
                   Expanded(
                     child: Divider(
-                      color: Colors.grey.shade300,
+                      color: const Color(0xFFE2E8F0),
                       thickness: 1,
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: Text(
                       'OR',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
                         fontWeight: FontWeight.w500,
+                        fontSize: 13,
                       ),
                     ),
                   ),
                   Expanded(
                     child: Divider(
-                      color: Colors.grey.shade300,
+                      color: const Color(0xFFE2E8F0),
                       thickness: 1,
                     ),
                   ),
                 ],
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               
               // Google sign up button with modern design
               SizedBox(
                 width: double.infinity,
-                height: 55,
+                height: 48,
                 child: OutlinedButton.icon(
-                  icon: Icon(
-                    Icons.g_mobiledata_rounded,
-                    size: 24,
-                    color: Colors.red.shade500,
+                  icon: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.white,
+                    ),
+                    child: const Icon(
+                      Icons.g_mobiledata_rounded,
+                      size: 16,
+                      color: Color(0xFF4285F4),
+                    ),
                   ),
                   label: const Text(
                     'Continue with Google',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
+                      color: Color(0xFF374151),
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey.shade300),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    disabledForegroundColor: Colors.grey.shade400.withOpacity(0.38),
-                    disabledBackgroundColor: Colors.grey.shade200.withOpacity(0.12),
+                    disabledForegroundColor: const Color(0xFF94A3B8),
+                    disabledBackgroundColor: const Color(0xFFF1F5F9),
                   ),
                   onPressed: _isLoading || !_acceptedTerms ? null : _signUpWithGoogle,
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               
               // Login link with better styling
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
+                  const Text(
                     "Already have an account?",
                     style: TextStyle(
-                      color: Colors.grey.shade700,
+                      color: Color(0xFF64748B),
+                      fontSize: 14,
                     ),
                   ),
                   TextButton(
@@ -559,19 +597,20 @@ class _SignupPageState extends State<SignupPage> {
                       Navigator.pushNamed(context, '/login');
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.amber.shade800,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      foregroundColor: const Color(0xFF1E40AF),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     ),
                     child: const Text(
                       'Login',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
           ),
         ),
