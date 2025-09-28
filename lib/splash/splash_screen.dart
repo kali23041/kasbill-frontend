@@ -50,29 +50,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A), // Dark blue-black to match logo
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Your app logo here
-            Icon(
-              Icons.account_balance_wallet,
-              size: 80,
-              color: Colors.amber,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Kasbill',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 40),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
-            ),
-          ],
+        child: Image.asset(
+          'lib/splash/logo.png',
+          width: 200,
+          height: 200,
+          fit: BoxFit.contain,
         ),
       ),
     );
