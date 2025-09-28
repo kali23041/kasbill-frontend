@@ -403,47 +403,67 @@ class _AddProductPageState extends State<AddProductPage> {
     User? currentUser = _auth.currentUser;
     
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.only(
-                left: 16.0, 
-                right: 16.0, 
-                top: 16.0, 
-                bottom: 80.0, // Add padding at bottom for the button
-              ),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Products',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8.0),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _isEditing ? 'Edit Product' : 'Add Product',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.refresh),
-                        onPressed: _resetForm,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.green.shade50,
-                          foregroundColor: Colors.green.shade800,
+                        IconButton(
+                          icon: const Icon(Icons.refresh_outlined),
+                          onPressed: _resetForm,
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            foregroundColor: const Color(0xFF475569),
+                            padding: const EdgeInsets.all(8.0),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 24),
                   
-                  // Product Form directly instead of tabs
+                  // Product Form
                   currentUser != null && currentUser.email != null
                     ? _buildAddProductForm(currentUser)
-                    : const Center(
-                        child: Text('You need to be logged in to manage products'),
+                    : Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'You need to be logged in to manage products',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ),
                 ],
               ),
@@ -455,38 +475,40 @@ class _AddProductPageState extends State<AddProductPage> {
               left: 0, 
               right: 0,
               child: Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.all(12.0),
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, -3),
-                    ),
-                  ],
+                  border: Border(
+                    top: BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
                 ),
                 child: SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 40,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
+                      backgroundColor: const Color(0xFF1E40AF),
                       foregroundColor: Colors.white,
-                      elevation: 3,
-                      shadowColor: Colors.green.withOpacity(0.5),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                     ),
                     onPressed: _isLoading ? null : _saveProduct,
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : Text(
                             _isEditing ? 'Update Product' : 'Add Product',
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                   ),
@@ -499,321 +521,347 @@ class _AddProductPageState extends State<AddProductPage> {
     );
   }
   
-  // Product Form Builder - modify to remove Save button at bottom
+  // Product Form Builder
   Widget _buildAddProductForm(User currentUser) {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Form Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(12),
+          // Error message
+          if (_errorMessage != null)
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              margin: const EdgeInsets.only(bottom: 8.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(6.0),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Color(0xFFDC2626),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(
+                        color: Color(0xFFDC2626),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
+          
+          // Images Section
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  _isEditing ? Icons.edit : Icons.add_box,
-                  color: Colors.green.shade800,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  _isEditing ? 'Edit Product' : 'Add New Product',
+                const Text(
+                  'Product Image',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (_productImages.isNotEmpty)
+                      Expanded(
+                        child: Container(
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            image: DecorationImage(
+                              image: MemoryImage(
+                                base64Decode(_productImages.first),
+                              ),
+                              fit: BoxFit.cover,
+                            ),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: Container(
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 24,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(width: 8),
+                    Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed: _isUploadingImage ? null : _pickImage,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E40AF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          child: _isUploadingImage
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Select',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                        ),
+                        if (_productImages.isNotEmpty)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _productImages.clear();
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFDC2626),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            child: const Text(
+                              'Remove',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Basic Info Section
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Basic Information',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                // Product Name
+                TextFormField(
+                  controller: _productNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Product Name',
+                    hintText: 'Enter product name',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.label_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter product name';
+                    }
+                    return null;
+                  },
+                  readOnly: _isEditing,
+                ),
+                const SizedBox(height: 8),
+                
+                // SKU
+                TextFormField(
+                  controller: _skuController,
+                  decoration: InputDecoration(
+                    labelText: 'SKU',
+                    hintText: 'Enter product SKU',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.qr_code_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter SKU';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                
+                // Description
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'Enter product description',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.description_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    alignLabelWithHint: true,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           
-          // Error message
-          if (_errorMessage != null)
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Colors.red.shade800,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red.shade800),
-                    ),
-                  ),
-                ],
-              ),
+          // Category & Metal Section
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-          
-          // Images Section - moved to start of form and simplified
-          Text(
-            'Product Image',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          // Simplified image picker
-          Row(
-            children: [
-              if (_productImages.isNotEmpty)
-                Expanded(
-                  child: Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      image: DecorationImage(
-                        image: MemoryImage(
-                          base64Decode(_productImages.first),
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 40,
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Category & Metal',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
                   ),
                 ),
-              const SizedBox(width: 12),
-              Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: _isUploadingImage ? null : _pickImage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                    child: _isUploadingImage
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Select Image'),
-                  ),
-                  if (_productImages.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _productImages.clear();
-                        });
-                      },
-                      icon: Icon(Icons.delete, color: Colors.red.shade600, size: 18),
-                      label: Text(
-                        'Remove',
-                        style: TextStyle(color: Colors.red.shade600),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+                const SizedBox(height: 8),
           
-          // Basic Info Section
-          Text(
-            'Basic Information',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          // Product Name
-          TextFormField(
-            controller: _productNameController,
-            decoration: InputDecoration(
-              labelText: 'Product Name',
-              hintText: 'Enter product name',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.label, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter product name';
-              }
-              return null;
-            },
-            readOnly: _isEditing, // Can't change name when editing
-          ),
-          const SizedBox(height: 16),
-          
-          // SKU
-          TextFormField(
-            controller: _skuController,
-            decoration: InputDecoration(
-              labelText: 'SKU',
-              hintText: 'Enter product SKU',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.qr_code, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter SKU';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          
-          // Description
-          TextFormField(
-            controller: _descriptionController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Description',
-              hintText: 'Enter product description',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.description, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
-              alignLabelWithHint: true,
-            ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Category Section
-          Text(
-            'Category & Metal',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          // Category Dropdown
-          StreamBuilder<QuerySnapshot>(
-            stream: _firestore
-                .collection('users')
-                .doc(currentUser.email)
-                .collection('categories')
-                .orderBy('name')
-                .snapshots(),
-            builder: (context, snapshot) {
-              // Handle loading state
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return DropdownButtonFormField<String>(
-                  items: const [],
-                  onChanged: null,
-                  decoration: InputDecoration(
-                    labelText: 'Category (Loading...)',
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    prefixIcon: Icon(Icons.category, color: Colors.green.shade400),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                  ),
-                );
-              }
+                // Category Dropdown
+                StreamBuilder<QuerySnapshot>(
+                  stream: _firestore
+                      .collection('users')
+                      .doc(currentUser.email)
+                      .collection('categories')
+                      .orderBy('name')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    // Handle loading state
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return DropdownButtonFormField<String>(
+                        items: const [],
+                        onChanged: null,
+                        decoration: InputDecoration(
+                          labelText: 'Category (Loading...)',
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(Icons.category_outlined, color: Color(0xFF64748B), size: 20),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      );
+                    }
               
-              // Handle error state
-              if (snapshot.hasError) {
-                return DropdownButtonFormField<String>(
-                  items: const [],
-                  onChanged: null,
-                  decoration: InputDecoration(
-                    labelText: 'Category (Error loading)',
-                    filled: true,
-                    fillColor: Colors.red.shade50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    prefixIcon: Icon(Icons.error, color: Colors.red),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.red.shade200),
-                    ),
-                  ),
-                );
-              }
+                    // Handle error state
+                    if (snapshot.hasError) {
+                      return DropdownButtonFormField<String>(
+                        items: const [],
+                        onChanged: null,
+                        decoration: InputDecoration(
+                          labelText: 'Category (Error loading)',
+                          filled: true,
+                          fillColor: const Color(0xFFFEF2F2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 20),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: const BorderSide(color: Color(0xFFFECACA)),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      );
+                    }
               
               // No categories available
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -1117,179 +1165,204 @@ class _AddProductPageState extends State<AddProductPage> {
           ),
           const SizedBox(height: 16),
           
-          // Weight Input
-          TextFormField(
-            controller: _weightController,
-            decoration: InputDecoration(
-              labelText: 'Weight (grams)',
-              hintText: 'Enter weight in grams',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.line_weight, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
+                // Weight Input
+                TextFormField(
+                  controller: _weightController,
+                  decoration: InputDecoration(
+                    labelText: 'Weight (grams)',
+                    hintText: 'Enter weight in grams',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.line_weight_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter weight';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                
+                // Making Charge Input
+                TextFormField(
+                  controller: _makingChargeController,
+                  decoration: InputDecoration(
+                    labelText: 'Making Charge (%)',
+                    hintText: 'Enter making charge percentage',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.percent_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter making charge';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                
+                // Other Charges Input
+                TextFormField(
+                  controller: _otherChargesController,
+                  decoration: InputDecoration(
+                    labelText: 'Other Charges',
+                    hintText: 'Enter other charges',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.attach_money_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter other charges';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                
+                // Discount Input
+                TextFormField(
+                  controller: _discountController,
+                  decoration: InputDecoration(
+                    labelText: 'Discount (%)',
+                    hintText: 'Enter discount percentage',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.discount_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter discount';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                
+                // Quantity Input
+                TextFormField(
+                  controller: _quantityController,
+                  decoration: InputDecoration(
+                    labelText: 'Quantity',
+                    hintText: 'Enter quantity',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.list_outlined, color: Color(0xFF64748B), size: 20),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter quantity';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                
+                // Total Price
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F9FF),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFF0EA5E9)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total Price:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0C4A6E),
+                        ),
+                      ),
+                      Text(
+                        currencyFormat.format(_totalPrice),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0C4A6E),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter weight';
-              }
-              return null;
-            },
           ),
-          const SizedBox(height: 16),
-          
-          // Making Charge Input
-          TextFormField(
-            controller: _makingChargeController,
-            decoration: InputDecoration(
-              labelText: 'Making Charge (%)',
-              hintText: 'Enter making charge percentage',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.percent, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
-            ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter making charge';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          
-          // Other Charges Input
-          TextFormField(
-            controller: _otherChargesController,
-            decoration: InputDecoration(
-              labelText: 'Other Charges',
-              hintText: 'Enter other charges',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.attach_money, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
-            ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter other charges';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          
-          // Discount Input
-          TextFormField(
-            controller: _discountController,
-            decoration: InputDecoration(
-              labelText: 'Discount (%)',
-              hintText: 'Enter discount percentage',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.discount, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
-            ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter discount';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          
-          // Quantity Input
-          TextFormField(
-            controller: _quantityController,
-            decoration: InputDecoration(
-              labelText: 'Quantity',
-              hintText: 'Enter quantity',
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.list, color: Colors.green.shade400),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.green.shade500, width: 2),
-              ),
-            ),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter quantity';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 24),
-          
-          // Total Price
-          Text(
-            'Total Price: ${currencyFormat.format(_totalPrice)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.green.shade800,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Add this section after the Weight & Quantity section, before Pricing
-          const SizedBox(height: 24),
         ],
       ),
     );

@@ -142,12 +142,12 @@ class _AddMetalPageState extends State<AddMetalPage> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -157,32 +157,52 @@ class _AddMetalPageState extends State<AddMetalPage> {
                     children: [
                       Text(
                         _isEditing ? 'Edit Metal' : 'Add New Metal',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade800,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1E293B),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close_outlined),
                         onPressed: () => Navigator.pop(context),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          foregroundColor: const Color(0xFF475569),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   
                   // Error message
                   if (_errorMessage != null)
                     Container(
-                      padding: const EdgeInsets.all(10),
-                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.only(bottom: 8.0),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(6.0),
+                        border: Border.all(color: const Color(0xFFFECACA)),
                       ),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade900),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Color(0xFFDC2626),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Color(0xFFDC2626),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   
@@ -200,20 +220,21 @@ class _AddMetalPageState extends State<AddMetalPage> {
                                 labelText: 'Metal Name',
                                 hintText: 'Enter metal name (e.g., Gold, Silver)',
                                 filled: true,
-                                fillColor: Colors.grey.shade50,
+                                fillColor: const Color(0xFFF8FAFC),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(6),
                                   borderSide: BorderSide.none,
                                 ),
-                                prefixIcon: Icon(Icons.style, color: Colors.blue.shade400),
+                                prefixIcon: const Icon(Icons.style_outlined, color: Color(0xFF64748B), size: 20),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade200),
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.blue.shade500, width: 2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1),
                                 ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -339,25 +360,31 @@ class _AddMetalPageState extends State<AddMetalPage> {
                   // Save button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 40,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
+                        backgroundColor: const Color(0xFF1E40AF),
                         foregroundColor: Colors.white,
-                        elevation: 3,
-                        shadowColor: Colors.blue.withOpacity(0.5),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                       onPressed: _isLoading ? null : () => _saveMetal(setState),
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : Text(
                               _isEditing ? 'Update Metal' : 'Add Metal',
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                     ),
@@ -515,84 +542,88 @@ class _AddMetalPageState extends State<AddMetalPage> {
     User? currentUser = _auth.currentUser;
     
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Metals',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
+              Container(
+                margin: const EdgeInsets.only(bottom: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Metals',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () => _showAddMetalSheet(),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.blue.shade50,
-                      foregroundColor: Colors.blue.shade800,
+                    IconButton(
+                      icon: const Icon(Icons.add_outlined),
+                      onPressed: () => _showAddMetalSheet(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        foregroundColor: const Color(0xFF475569),
+                        padding: const EdgeInsets.all(8.0),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
               
               // Info card about metals
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(8.0),
+                margin: const EdgeInsets.only(bottom: 8.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.blue.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.blue.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        shape: BoxShape.circle,
+                        color: const Color(0xFFF0F9FF),
+                        borderRadius: BorderRadius.circular(6.0),
                       ),
-                      child: Icon(
-                        Icons.monetization_on,
-                        color: Colors.blue.shade800,
-                        size: 24,
+                      child: const Icon(
+                        Icons.monetization_on_outlined,
+                        color: Color(0xFF0EA5E9),
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Precious Metals',
                             style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF374151),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           const Text(
                             'Manage your inventory of metals with current rates',
                             style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -601,33 +632,26 @@ class _AddMetalPageState extends State<AddMetalPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
               
               // Search Bar
               Container(
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 8.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search metals...',
-                    prefixIcon: Icon(Icons.search, color: Colors.blue.shade300),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                    prefixIcon: const Icon(Icons.search_outlined, color: Color(0xFF64748B), size: 20),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(Icons.clear_outlined, size: 20),
                             onPressed: () {
                               setState(() {
                                 _searchController.clear();
@@ -782,40 +806,33 @@ class _AddMetalPageState extends State<AddMetalPage> {
                             final double rate = (metal['rate'] as num?)?.toDouble() ?? 0.0;
                             
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
+                              margin: const EdgeInsets.only(bottom: 8.0),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
-                                    spreadRadius: 2,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.all(16.0),
+                                padding: const EdgeInsets.all(8.0),
                                 child: Row(
                                   children: [
                                     // Metal icon/avatar
                                     Container(
-                                      width: 60,
-                                      height: 60,
+                                      width: 40,
+                                      height: 40,
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.shade50,
-                                        shape: BoxShape.circle,
+                                        color: const Color(0xFFF0F9FF),
+                                        borderRadius: BorderRadius.circular(6.0),
                                       ),
-                                      child: Center(
+                                      child: const Center(
                                         child: Icon(
-                                          Icons.style,
-                                          size: 28,
-                                          color: Colors.blue.shade800,
+                                          Icons.style_outlined,
+                                          size: 20,
+                                          color: Color(0xFF0EA5E9),
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 16),
+                                    const SizedBox(width: 12),
                                     
                                     // Metal details
                                     Expanded(
@@ -827,46 +844,47 @@ class _AddMetalPageState extends State<AddMetalPage> {
                                               Text(
                                                 metal['name'] ?? 'Unnamed Metal',
                                                 style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                  color: Color(0xFF374151),
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
+                                              const SizedBox(width: 6),
                                               Container(
                                                 padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8,
+                                                  horizontal: 6,
                                                   vertical: 2,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.blue.shade50,
+                                                  color: const Color(0xFFF0F9FF),
                                                   borderRadius: BorderRadius.circular(4),
                                                 ),
                                                 child: Text(
                                                   metal['carat'] ?? '',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.blue.shade800,
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Color(0xFF0EA5E9),
                                                   ),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: 2),
                                           Text(
                                             'SKU: ${metal['sku'] ?? 'N/A'}',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 14,
+                                            style: const TextStyle(
+                                              color: Color(0xFF64748B),
+                                              fontSize: 12,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: 2),
                                           Text(
                                             'Rate: ${currencyFormat.format(rate)}/g',
-                                            style: TextStyle(
-                                              color: Colors.green.shade700,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
+                                            style: const TextStyle(
+                                              color: Color(0xFF059669),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
                                             ),
                                           ),
                                         ],
@@ -874,11 +892,12 @@ class _AddMetalPageState extends State<AddMetalPage> {
                                     ),
                                     
                                     // Action buttons
-                                    Column(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.edit),
-                                          color: Colors.blue.shade600,
+                                          icon: const Icon(Icons.edit_outlined, size: 18),
+                                          color: const Color(0xFF1E40AF),
                                           onPressed: () {
                                             _showAddMetalSheet(
                                               metalId: metalId,
@@ -887,8 +906,8 @@ class _AddMetalPageState extends State<AddMetalPage> {
                                           },
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete),
-                                          color: Colors.red.shade600,
+                                          icon: const Icon(Icons.delete_outlined, size: 18),
+                                          color: const Color(0xFFDC2626),
                                           onPressed: () => _deleteMetal(metalId),
                                         ),
                                       ],
@@ -911,8 +930,8 @@ class _AddMetalPageState extends State<AddMetalPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddMetalSheet(),
-        backgroundColor: Colors.blue.shade700,
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF1E40AF),
+        child: const Icon(Icons.add_outlined),
       ),
     );
   }

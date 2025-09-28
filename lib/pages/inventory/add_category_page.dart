@@ -176,12 +176,12 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -191,32 +191,52 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                     children: [
                       Text(
                         _isEditing ? 'Edit Category' : 'Add New Category',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purple.shade800,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1E293B),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close_outlined),
                         onPressed: () => Navigator.pop(context),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          foregroundColor: const Color(0xFF475569),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   
                   // Error message
                   if (_errorMessage != null)
                     Container(
-                      padding: const EdgeInsets.all(10),
-                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.only(bottom: 8.0),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(6.0),
+                        border: Border.all(color: const Color(0xFFFECACA)),
                       ),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade900),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Color(0xFFDC2626),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Color(0xFFDC2626),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   
@@ -365,25 +385,31 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                   // Save button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 40,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple.shade700,
+                        backgroundColor: const Color(0xFF1E40AF),
                         foregroundColor: Colors.white,
-                        elevation: 3,
-                        shadowColor: Colors.purple.withOpacity(0.5),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                       onPressed: _isLoading ? null : _saveCategory,
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : Text(
                               _isEditing ? 'Update Category' : 'Add Category',
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                     ),
@@ -550,84 +576,88 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
     User? currentUser = _auth.currentUser;
     
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Categories',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
+              Container(
+                margin: const EdgeInsets.only(bottom: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Categories',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () => _showAddCategorySheet(),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.purple.shade50,
-                      foregroundColor: Colors.purple.shade800,
+                    IconButton(
+                      icon: const Icon(Icons.add_outlined),
+                      onPressed: () => _showAddCategorySheet(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        foregroundColor: const Color(0xFF475569),
+                        padding: const EdgeInsets.all(8.0),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
               
               // Info card about categories
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(8.0),
+                margin: const EdgeInsets.only(bottom: 8.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.purple.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.purple.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
-                        color: Colors.purple.shade50,
-                        shape: BoxShape.circle,
+                        color: const Color(0xFFF0F9FF),
+                        borderRadius: BorderRadius.circular(6.0),
                       ),
-                      child: Icon(
-                        Icons.category,
-                        color: Colors.purple.shade800,
-                        size: 24,
+                      child: const Icon(
+                        Icons.category_outlined,
+                        color: Color(0xFF0EA5E9),
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Jewelry Categories',
                             style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple.shade800,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF374151),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           const Text(
                             'Organize your inventory with categories and subcategories',
                             style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -636,33 +666,26 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
               
               // Search Bar
               Container(
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 8.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search categories...',
-                    prefixIcon: Icon(Icons.search, color: Colors.purple.shade300),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                    prefixIcon: const Icon(Icons.search_outlined, color: Color(0xFF64748B), size: 20),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(Icons.clear_outlined, size: 20),
                             onPressed: () {
                               setState(() {
                                 _searchController.clear();
@@ -828,34 +851,28 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                             final subcategories = category['subcategories'] as List<dynamic>?;
                             
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
+                              margin: const EdgeInsets.only(bottom: 8.0),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
-                                    spreadRadius: 2,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
                               child: Theme(
                                 data: Theme.of(context).copyWith(
                                   dividerColor: Colors.transparent,
-                                  colorScheme: ColorScheme.light(
-                                    primary: Colors.purple.shade800,
+                                  colorScheme: const ColorScheme.light(
+                                    primary: Color(0xFF1E40AF),
                                   ),
                                 ),
                                 child: ExpansionTile(
-                                  tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   childrenPadding: EdgeInsets.zero,
                                   title: Text(
                                     category['name'] ?? 'Unnamed Category',
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Color(0xFF374151),
                                     ),
                                   ),
                                   subtitle: Column(
@@ -888,22 +905,23 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                                     ],
                                   ),
                                   leading: Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: Colors.purple.shade50,
-                                      shape: BoxShape.circle,
+                                      color: const Color(0xFFF0F9FF),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Icon(
-                                      Icons.category,
-                                      color: Colors.purple.shade800,
+                                    child: const Icon(
+                                      Icons.category_outlined,
+                                      color: Color(0xFF0EA5E9),
+                                      size: 16,
                                     ),
                                   ),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        color: Colors.blue.shade600,
+                                        icon: const Icon(Icons.edit_outlined, size: 18),
+                                        color: const Color(0xFF1E40AF),
                                         onPressed: () {
                                           _showAddCategorySheet(
                                             categoryId: categoryId,
@@ -912,8 +930,8 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                                         },
                                       ),
                                       IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        color: Colors.red.shade600,
+                                        icon: const Icon(Icons.delete_outlined, size: 18),
+                                        color: const Color(0xFFDC2626),
                                         onPressed: () => _deleteCategory(categoryId),
                                       ),
                                     ],
@@ -921,13 +939,13 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
                                   children: [
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.grey.shade50,
+                                        color: const Color(0xFFF8FAFC),
                                         borderRadius: const BorderRadius.only(
-                                          bottomLeft: Radius.circular(16),
-                                          bottomRight: Radius.circular(16),
+                                          bottomLeft: Radius.circular(8),
+                                          bottomRight: Radius.circular(8),
                                         ),
                                       ),
-                                      padding: const EdgeInsets.all(16.0),
+                                      padding: const EdgeInsets.all(8.0),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -994,8 +1012,8 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddCategorySheet(),
-        backgroundColor: Colors.purple.shade700,
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF1E40AF),
+        child: const Icon(Icons.add_outlined),
       ),
     );
   }
