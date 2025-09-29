@@ -548,7 +548,7 @@ class _AddGemstonePageState extends State<AddGemstonePage> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: const TextButton.styleFrom(foregroundColor: Color(0xFFDC2626)),
+                style: TextButton.styleFrom(foregroundColor: const Color(0xFFDC2626)),
                 child: const Text('Delete'),
               ),
             ],
