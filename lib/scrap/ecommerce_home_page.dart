@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'pages/search_page.dart';
+import 'pages/scrap_item_details_page.dart';
+import 'components/bottom_navbar.dart';
 
 class EcommerceHomePage extends StatefulWidget {
-  const EcommerceHomePage({super.key});
+  final bool showNavbar;
+  
+  const EcommerceHomePage({super.key, this.showNavbar = true});
 
   @override
   State<EcommerceHomePage> createState() => _EcommerceHomePageState();
@@ -31,27 +35,27 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
   final List<Map<String, dynamic>> _brands = [
     {
       'name': 'Sell B2B',
-      'logo': '🏢', // Business building
+      'icon': Icons.business,
       'isSelected': true,
     },
     {
       'name': 'Sell B2C',
-      'logo': '👥', // Consumer group
+      'icon': Icons.people,
       'isSelected': false,
     },
     {
       'name': 'Buy Scrap',
-      'logo': '🛒', // Shopping cart
+      'icon': Icons.shopping_cart,
       'isSelected': false,
     },
     {
       'name': 'Track Rates',
-      'logo': '📊', // Chart/rates
+      'icon': Icons.trending_up,
       'isSelected': false,
     },
     {
       'name': 'My Orders',
-      'logo': '📋', // Order list
+      'icon': Icons.list_alt,
       'isSelected': false,
     },
   ];
@@ -404,7 +408,7 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Brand Logo
+                            // Brand Icon
                             Container(
                               width: 20,
                               height: 20,
@@ -414,13 +418,10 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
                                 border: isSelected ? null : Border.all(color: Colors.black, width: 1),
                               ),
                               child: Center(
-                                child: Text(
-                                  brand['logo'],
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.black : Colors.black,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                child: Icon(
+                                  brand['icon'],
+                                  color: isSelected ? Colors.black : Colors.black,
+                                  size: 12,
                                 ),
                               ),
                             ),
@@ -509,16 +510,24 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
                         itemCount: _products.length,
-                        itemBuilder: (context, index) {
-                          final product = _products[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
+                          itemBuilder: (context, index) {
+                            final product = _products[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ScrapItemDetailsPage(item: product),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF5F5F5),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
                               children: [
                                 // Crypto Details
                                 Expanded(
@@ -596,11 +605,12 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                     ),
                   ),
                 ],
@@ -609,38 +619,16 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(top: 4), // Match the spacing with top sections
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF8E1), // Light cream/beige color like in the image
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildNavItem(Icons.home, 0, true),
-                _buildNavItem(Icons.favorite_border, 1, false),
-                _buildNavItem(Icons.settings_outlined, 2, false),
-                _buildNavItem(Icons.person_outline, 3, false),
-              ],
-            ),
-          ),
-        ),
-      ),
+      bottomNavigationBar: widget.showNavbar
+          ? BottomNavbar(
+              selectedIndex: _selectedIndex,
+              onItemTapped: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+            )
+          : null,
     );
   }
 
@@ -677,25 +665,6 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
         minY: minValue - (range * 0.1),
         maxY: maxValue + (range * 0.1),
         lineTouchData: const LineTouchData(enabled: false),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, int index, bool isActive) {
-    final isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        child: Icon(
-          icon,
-          color: isSelected ? Colors.black : const Color(0xFF999999),
-          size: 22,
-        ),
       ),
     );
   }
