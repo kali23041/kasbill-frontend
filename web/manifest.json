@@ -1,6 +1,6 @@
 {
-    "name": "Recon",
-    "short_name": "Recon",
+    "name": "Scraply",
+    "short_name": "Scraply",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

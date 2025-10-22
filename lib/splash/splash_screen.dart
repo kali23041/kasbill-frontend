@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../home_page.dart';
+import '../scrap/ecommerce_home_page.dart';
 import '../auth/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -29,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
       
       if (user != null) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomePage())
+          MaterialPageRoute(builder: (_) => const EcommerceHomePage())
         );
       } else {
         Navigator.of(context).pushReplacement(
