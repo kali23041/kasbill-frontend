@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'pages/search_page.dart';
 import 'pages/scrap_item_details_page.dart';
 import 'components/bottom_navbar.dart';
+import 'components/side_panel.dart';
 
 class EcommerceHomePage extends StatefulWidget {
   final bool showNavbar;
@@ -23,6 +24,7 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
   late Animation<double> _searchAnimation;
   bool _isSearchExpanded = false;
   final GlobalKey _searchBarKey = GlobalKey();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>(); // Add scaffold key
 
   final List<String> _categories = [
     'All Items',
@@ -256,7 +258,9 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey, // Add the key to Scaffold
       backgroundColor: Colors.black, // Black background for the dramatic effect
+      drawer: const SidePanel(), // Add the side panel
       body: Column(
         children: [
           // Upper white section with header and search
@@ -279,17 +283,22 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Hamburger menu
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: const Icon(
-                            Icons.menu,
-                            color: Colors.black,
-                            size: 18,
+                        GestureDetector(
+                          onTap: () {
+                            _scaffoldKey.currentState?.openDrawer();
+                          },
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: const Icon(
+                              Icons.menu,
+                              color: Colors.black,
+                              size: 18,
+                            ),
                           ),
                         ),
                             // Brand name
