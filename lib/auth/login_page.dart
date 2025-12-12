@@ -19,14 +19,41 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Helper function to get user role from Firestore
+  Future<String?> _getUserRole(String? email) async {
+    if (email == null) return null;
+    try {
+      final userDoc = await _firestore.collection('users').doc(email).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['role'] as String?;
+      }
+    } catch (e) {
+      print('Error getting user role: $e');
+    }
+    return null;
+  }
+
+  // Navigate based on user role
+  Future<void> _navigateBasedOnRole(User user) async {
+    final role = await _getUserRole(user.email);
+    
+    if (mounted) {
+      if (role == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
   }
 
   Future<void> _signInWithEmailAndPassword() async {
@@ -36,15 +63,16 @@ class _LoginPageState extends State<LoginPage> {
         _errorMessage = null;
       });
 
-      await _auth.signInWithEmailAndPassword(
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      // Navigate to home on successful login
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      // Update or create user document in Firestore
+      await _updateOrCreateUserInfo(userCredential.user!);
+
+      // Navigate based on user role (admin or trader)
+      await _navigateBasedOnRole(userCredential.user!);
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -109,14 +137,23 @@ class _LoginPageState extends State<LoginPage> {
       // Sign in with Firebase using the credential
       UserCredential userCredential = await _auth.signInWithCredential(credential);
       
-      // Store user info in Firestore if it's a new user
+      // Create user document in Firestore with Trader role (if new user)
       if (userCredential.additionalUserInfo?.isNewUser ?? false) {
         await _storeUserInfo(userCredential.user!);
+      } else {
+        // Update last login for existing users
+        try {
+          await _firestore.collection('users').doc(userCredential.user!.email).update({
+            'lastLogin': FieldValue.serverTimestamp(),
+          });
+        } catch (e) {
+          // If update fails (document might not exist), create it
+          await _storeUserInfo(userCredential.user!);
+        }
       }
       
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      // Navigate based on user role (admin or trader)
+      await _navigateBasedOnRole(userCredential.user!);
     } catch (e) {
       setState(() {
         _errorMessage = 'Google sign-in failed. Please try again.';
@@ -135,11 +172,35 @@ class _LoginPageState extends State<LoginPage> {
         'displayName': user.displayName ?? '',
         'photoURL': user.photoURL ?? '',
         'phoneNumber': user.phoneNumber ?? '',
+        'role': 'Trader', // B2B scrap trading role
         'createdAt': FieldValue.serverTimestamp(),
         'lastLogin': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true)); // Use merge to avoid overwriting existing data
     } catch (e) {
       print('Error storing user data: $e');
+      // Don't throw error - user is already created in Firebase Auth
+    }
+  }
+
+  Future<void> _updateOrCreateUserInfo(User user) async {
+    try {
+      // Check if user document exists
+      final userDoc = await _firestore.collection('users').doc(user.email).get();
+      
+      if (userDoc.exists) {
+        // Update last login for existing users
+        await _firestore.collection('users').doc(user.email).update({
+          'lastLogin': FieldValue.serverTimestamp(),
+          'displayName': user.displayName ?? userDoc.data()?['displayName'] ?? '',
+          'photoURL': user.photoURL ?? userDoc.data()?['photoURL'] ?? '',
+        });
+      } else {
+        // Create user document if it doesn't exist
+        await _storeUserInfo(user);
+      }
+    } catch (e) {
+      print('Error updating user data: $e');
+      // Don't throw error - user is already logged in
     }
   }
 

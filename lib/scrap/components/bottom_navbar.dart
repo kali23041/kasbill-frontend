@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class BottomNavbar extends StatelessWidget {
   final int selectedIndex;
-  final Function(int) onItemTapped;
+  final ValueChanged<int> onItemTapped;
 
   const BottomNavbar({
     super.key,
@@ -35,10 +35,10 @@ class BottomNavbar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildNavItem(Icons.home, 0, true),
-              _buildNavItem(Icons.favorite_border, 1, false),
-              _buildNavItem(Icons.settings_outlined, 2, false),
-              _buildNavItem(Icons.person_outline, 3, false),
+              _buildNavItem(Icons.home, 0),
+              _buildNavItem(Icons.favorite_border, 1),
+              _buildNavItem(Icons.settings_outlined, 2),
+              _buildNavItem(Icons.person_outline, 3),
             ],
           ),
         ),
@@ -46,13 +46,14 @@ class BottomNavbar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index, bool isActive) {
+  Widget _buildNavItem(IconData icon, int index) {
     final isSelected = selectedIndex == index;
     return GestureDetector(
-      onTap: () {
-        onItemTapped(index);
-      },
-      child: Container(
+      onTap: () => onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeInOut,
         padding: const EdgeInsets.all(6),
         child: Icon(
           icon,

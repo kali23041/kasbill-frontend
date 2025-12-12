@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../home_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../scrap/scrap_main_page.dart';
+import '../admin/admin_main_page.dart';
 import '../auth/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -73,6 +74,19 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     super.dispose();
   }
 
+  Future<String?> _getUserRole(String? email) async {
+    if (email == null) return null;
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(email).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['role'] as String?;
+      }
+    } catch (e) {
+      print('Error getting user role: $e');
+    }
+    return null;
+  }
+
   Future<void> _checkUserAndNavigate() async {
     try {
       // Check current user
@@ -87,9 +101,22 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       
       // Navigate with custom page route for smooth transition
       if (user != null) {
+        // Get user role
+        final role = await _getUserRole(user.email);
+        
+        if (!mounted) return;
+        
+        // Navigate based on role
+        Widget targetPage;
+        if (role == 'admin') {
+          targetPage = const AdminMainPage();
+        } else {
+          targetPage = const ScrapMainPage();
+        }
+        
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const ScrapMainPage(),
+            pageBuilder: (context, animation, secondaryAnimation) => targetPage,
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),

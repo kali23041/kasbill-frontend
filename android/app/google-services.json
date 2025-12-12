@@ -7,12 +7,16 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:174995240247:android:c5729f0931403ab5a796b2",
+        "mobilesdk_app_id": "1:174995240247:android:5f096d7a0268896ea796b2",
         "android_client_info": {
           "package_name": "com.kasbills.kasbill"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "174995240247-m08mfsc46is6o2g58ek0femtsfdodpc6.apps.googleusercontent.com",
+          "client_type": 3
+        }
       "api_key": [
         {
           "current_key": "AIzaSyDlguULYAcceditt-dAMAtiszzMSGPqzlI"
@@ -20,7 +24,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "174995240247-m08mfsc46is6o2g58ek0femtsfdodpc6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

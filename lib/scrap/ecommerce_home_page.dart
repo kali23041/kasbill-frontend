@@ -5,6 +5,7 @@ import 'pages/search_page.dart';
 import 'pages/scrap_item_details_page.dart';
 import 'components/bottom_navbar.dart';
 import 'components/side_panel.dart';
+import '../../auth/login_page.dart';
 
 class EcommerceHomePage extends StatefulWidget {
   final bool showNavbar;
@@ -257,11 +258,49 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey, // Add the key to Scaffold
-      backgroundColor: Colors.black, // Black background for the dramatic effect
-      drawer: const SidePanel(), // Add the side panel
-      body: Column(
+    // Check authentication status
+    return StreamBuilder<User?>(
+      stream: _auth.authStateChanges(),
+      builder: (context, snapshot) {
+        // Show loading while checking authentication
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+              ),
+            ),
+          );
+        }
+        
+        // Check if user is authenticated
+        User? user = snapshot.data;
+        if (user == null) {
+          // Redirect to login if not authenticated
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const LoginPage(),
+              ),
+            );
+          });
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+              ),
+            ),
+          );
+        }
+        
+        // User is authenticated, show the page content
+        return Scaffold(
+          key: _scaffoldKey, // Add the key to Scaffold
+          backgroundColor: Colors.black, // Black background for the dramatic effect
+          drawer: const SidePanel(), // Add the side panel
+          body: Column(
         children: [
           // Upper white section with header and search
           Container(
@@ -628,16 +667,18 @@ class _EcommerceHomePageState extends State<EcommerceHomePage> with TickerProvid
           ),
         ],
       ),
-      bottomNavigationBar: widget.showNavbar
-          ? BottomNavbar(
-              selectedIndex: _selectedIndex,
-              onItemTapped: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
-            )
-          : null,
+          bottomNavigationBar: widget.showNavbar
+              ? BottomNavbar(
+                  selectedIndex: _selectedIndex,
+                  onItemTapped: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                )
+              : null,
+        );
+      },
     );
   }
 

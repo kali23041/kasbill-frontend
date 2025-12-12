@@ -24,8 +24,16 @@ class _SignupPageState extends State<SignupPage> {
   bool _acceptedTerms = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Note: If you get "ApiException: 10" or "serverClientId" errors, you need to:
+  // 1. Go to Firebase Console > Project Settings > General
+  // 2. Find or create a Web app
+  // 3. Copy the Web client ID
+  // 4. Add it here: GoogleSignIn(serverClientId: 'YOUR_WEB_CLIENT_ID', scopes: ['email', 'profile'])
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    // serverClientId: 'YOUR_WEB_CLIENT_ID_HERE', // Uncomment and add your Web client ID from Firebase Console
+  );
 
   @override
   void dispose() {
@@ -34,6 +42,33 @@ class _SignupPageState extends State<SignupPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  // Helper function to get user role from Firestore
+  Future<String?> _getUserRole(String? email) async {
+    if (email == null) return null;
+    try {
+      final userDoc = await _firestore.collection('users').doc(email).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['role'] as String?;
+      }
+    } catch (e) {
+      print('Error getting user role: $e');
+    }
+    return null;
+  }
+
+  // Navigate based on user role
+  Future<void> _navigateBasedOnRole(User user) async {
+    final role = await _getUserRole(user.email);
+    
+    if (mounted) {
+      if (role == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
   }
 
   Future<void> _signUpWithEmailAndPassword() async {
@@ -51,14 +86,12 @@ class _SignupPageState extends State<SignupPage> {
 
       // Update display name
       await userCredential.user!.updateDisplayName(_nameController.text.trim());
-      
-      // Store user info in Firestore
+
+      // Create user document in Firestore with Trader role
       await _storeUserInfo(userCredential.user!);
 
-      // Navigate to home page
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      // Navigate based on user role (admin or trader)
+      await _navigateBasedOnRole(userCredential.user!);
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -99,7 +132,11 @@ class _SignupPageState extends State<SignupPage> {
       });
 
       // Configure Google Sign In to show account selection prompt every time
-      _googleSignIn.signOut(); // Sign out first to force account selection
+      try {
+        await _googleSignIn.signOut(); // Sign out first to force account selection
+      } catch (e) {
+        print('Sign out error (can be ignored): $e');
+      }
       
       // Trigger Google sign-in flow with a prompt parameter
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -111,27 +148,107 @@ class _SignupPageState extends State<SignupPage> {
         return;
       }
       
-      // Rest of the method stays the same
+      // Obtain authentication details
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       
+      // Check if we have the required tokens
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        throw Exception('Failed to obtain Google authentication tokens. AccessToken: ${googleAuth.accessToken != null}, IdToken: ${googleAuth.idToken != null}');
+      }
+      
+      // Create credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
       
+      // Sign in with Firebase using the credential
       UserCredential userCredential = await _auth.signInWithCredential(credential);
       
+      // Create user document in Firestore with Trader role (if new user)
       if (userCredential.additionalUserInfo?.isNewUser ?? false) {
         await _storeUserInfo(userCredential.user!);
+      } else {
+        // Update last login for existing users
+        try {
+          await _firestore.collection('users').doc(userCredential.user!.email).update({
+            'lastLogin': FieldValue.serverTimestamp(),
+          });
+        } catch (e) {
+          // If update fails (document might not exist), create it
+          await _storeUserInfo(userCredential.user!);
+        }
       }
       
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+      // Navigate based on user role (admin or trader)
+      await _navigateBasedOnRole(userCredential.user!);
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          message = 'An account already exists with a different sign-in method.';
+          break;
+        case 'invalid-credential':
+          message = 'The credential is invalid or has expired.';
+          break;
+        case 'operation-not-allowed':
+          message = 'Google sign-in is not enabled.';
+          break;
+        case 'user-disabled':
+          message = 'This user account has been disabled.';
+          break;
+        case 'user-not-found':
+          message = 'User not found.';
+          break;
+        default:
+          message = 'Google sign-up failed: ${e.message ?? e.code}';
       }
-    } catch (e) {
       setState(() {
-        _errorMessage = 'Google sign-up failed. Please try again.';
+        _errorMessage = message;
       });
+      print('Google Sign-Up Firebase Error: ${e.code} - ${e.message}');
+    } catch (e) {
+      String errorMessage = 'Google sign-up failed. Please try again.';
+      String errorString = e.toString().toLowerCase();
+      
+      // Check for ApiException: 10 (DEVELOPER_ERROR) - most common configuration issue
+      if (errorString.contains('apiexception: 10') || 
+          errorString.contains('apiException: 10') ||
+          errorString.contains('10:') ||
+          (errorString.contains('sign_in_failed') && errorString.contains('10'))) {
+        errorMessage = 'Configuration Error (ApiException: 10)\n\n'
+            'Add SHA-1 to Firebase Console:\n'
+            'Debug: 0B:69:29:E5:26:BF:6C:3E:48:55:43:6C:F8:7A:11:0C:50:83:1A:7A\n'
+            'Release: 10:CB:5C:A6:4D:BA:87:DB:E9:96:D9:21:3F:E1:48:7C:DB:CE:BC:EC\n\n'
+            'Firebase Console > Project Settings > Your App > Add SHA-1';
+      } else if (errorString.contains('network_error') || errorString.contains('networkerror') || errorString.contains('socketexception')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (errorString.contains('sign_in_canceled') || errorString.contains('signincanceledexception') || errorString.contains('12500')) {
+        errorMessage = 'Sign-in was canceled.';
+      } else if (errorString.contains('sign_in_failed') || errorString.contains('signinfailedexception')) {
+        errorMessage = 'Sign-in failed. Please try again.';
+      } else if (errorString.contains('serverclientid')) {
+        errorMessage = 'Web Client ID required. Get it from Firebase Console > Project Settings > General > Web app';
+      } else if (errorString.contains('platformexception')) {
+        // Extract more details from PlatformException
+        if (errorString.contains('apiexception')) {
+          errorMessage = 'Google Sign-In API Error. Check Firebase configuration.';
+        } else {
+          errorMessage = 'Platform error: ${e.toString().length > 150 ? e.toString().substring(0, 150) + "..." : e.toString()}';
+        }
+      } else {
+        // Show more detailed error for debugging
+        errorMessage = 'Error: ${e.toString().length > 100 ? e.toString().substring(0, 100) + "..." : e.toString()}';
+      }
+      
+      setState(() {
+        _errorMessage = errorMessage;
+      });
+      print('Google Sign-Up Error Details: $e');
+      print('Error Type: ${e.runtimeType}');
+      if (e is Exception) {
+        print('Exception: ${e.toString()}');
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -146,12 +263,13 @@ class _SignupPageState extends State<SignupPage> {
         'displayName': user.displayName ?? _nameController.text.trim(),
         'photoURL': user.photoURL ?? '',
         'phoneNumber': user.phoneNumber ?? '',
-        'membership': 'free',
+        'role': 'Trader', // B2B scrap trading role
         'createdAt': FieldValue.serverTimestamp(),
         'lastLogin': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true)); // Use merge to avoid overwriting existing data
     } catch (e) {
       print('Error storing user data: $e');
+      // Don't throw error - user is already created in Firebase Auth
     }
   }
 
@@ -628,7 +746,7 @@ class _SignupPageState extends State<SignupPage> {
                             borderRadius: BorderRadius.circular(18),
                           ),
                         ),
-                        onPressed: _isLoading || !_acceptedTerms ? null : _signUpWithGoogle,
+                        onPressed: _isLoading ? null : _signUpWithGoogle,
                       ),
                     ),
                     

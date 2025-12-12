@@ -1,12 +1,194 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../../../auth/login_page.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  bool _isLoggingOut = false;
+
+  Future<void> _handleLogout() async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Logout',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to logout? You will need to sign in again to access your account.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFDC2626),
+            ),
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      setState(() {
+        _isLoggingOut = true;
+      });
+
+      try {
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => WillPopScope(
+            onWillPop: () async => false,
+            child: const Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Logging out...'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // Sign out from Google if signed in with Google
+        try {
+          await _googleSignIn.signOut();
+        } catch (e) {
+          // Ignore Google sign out errors (user might not be signed in with Google)
+          print('Google sign out error (can be ignored): $e');
+        }
+
+        // Sign out from Firebase Auth - this closes the session
+        await _auth.signOut();
+
+        // Close loading dialog
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+
+        // Clear navigation stack and navigate to login page
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const LoginPage(),
+            ),
+            (route) => false, // Remove all previous routes
+          );
+        }
+      } catch (e) {
+        // Close loading dialog if still open
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+
+        if (mounted) {
+          setState(() {
+            _isLoggingOut = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error logging out: ${e.toString()}'),
+              backgroundColor: const Color(0xFFDC2626),
+              duration: const Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: _handleLogout,
+              ),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _handleEditProfile() {
+    // TODO: Navigate to edit profile page
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Edit profile feature coming soon'),
+      ),
+    );
+  }
+
+  void _handleTradeHistory() {
+    // TODO: Navigate to trade history page
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Trade history feature coming soon'),
+      ),
+    );
+  }
+
+  void _handleSavedQuotes() {
+    // TODO: Navigate to saved quotes page
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Saved quotes feature coming soon'),
+      ),
+    );
+  }
+
+  void _handleNotifications() {
+    // TODO: Navigate to notifications page
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Notifications feature coming soon'),
+      ),
+    );
+  }
+
+  void _handleShareApp() {
+    // TODO: Implement share app functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Share app feature coming soon'),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     
     return Column(
       children: [
@@ -54,17 +236,20 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       // Edit button
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF5F5F5),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Icon(
-                          Icons.edit_outlined,
-                          color: Colors.black,
-                          size: 18,
+                      GestureDetector(
+                        onTap: _handleEditProfile,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: const Icon(
+                            Icons.edit_outlined,
+                            color: Colors.black,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ],
@@ -161,10 +346,21 @@ class ProfilePage extends StatelessWidget {
                   
                   const SizedBox(height: 12),
                   
-                  _buildActionItem(Icons.history, 'Trade History', () {}),
-                  _buildActionItem(Icons.bookmark_outline, 'Saved Quotes', () {}),
-                  _buildActionItem(Icons.notifications_outlined, 'Notifications', () {}),
-                  _buildActionItem(Icons.share_outlined, 'Share App', () {}),
+                  _buildActionItem(Icons.history, 'Trade History', _handleTradeHistory),
+                  _buildActionItem(Icons.bookmark_outline, 'Saved Quotes', _handleSavedQuotes),
+                  _buildActionItem(Icons.notifications_outlined, 'Notifications', _handleNotifications),
+                  _buildActionItem(Icons.share_outlined, 'Share App', _handleShareApp),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Logout Section
+                  _buildActionItem(
+                    Icons.logout,
+                    'Logout',
+                    _isLoggingOut ? () {} : _handleLogout,
+                    isDestructive: true,
+                    isLoading: _isLoggingOut,
+                  ),
                 ],
               ),
             ),
@@ -174,7 +370,13 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionItem(IconData icon, String title, VoidCallback onTap) {
+  Widget _buildActionItem(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+    bool isLoading = false,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -186,29 +388,47 @@ class ProfilePage extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDestructive ? const Color(0xFFFEF2F2) : Colors.white,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icon,
-            color: Colors.black,
-            size: 20,
-          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFDC2626)),
+                  ),
+                )
+              : Icon(
+                  icon,
+                  color: isDestructive ? const Color(0xFFDC2626) : Colors.black,
+                  size: 20,
+                ),
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF1E293B),
+            color: isDestructive ? const Color(0xFFDC2626) : const Color(0xFF1E293B),
           ),
         ),
-        trailing: const Icon(
-          Icons.chevron_right,
-          color: Color(0xFF999999),
-          size: 20,
-        ),
-        onTap: onTap,
+        trailing: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFDC2626)),
+                ),
+              )
+            : Icon(
+                Icons.chevron_right,
+                color: isDestructive ? const Color(0xFFDC2626) : const Color(0xFF999999),
+                size: 20,
+              ),
+        onTap: isLoading ? null : onTap,
       ),
     );
   }
