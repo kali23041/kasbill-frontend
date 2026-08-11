@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.kasbills" "\0"
-            VALUE "FileDescription", "kasbill" "\0"
+            VALUE "CompanyName", "Ratnex" "\0"
+            VALUE "FileDescription", "Ratnex" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "kasbill" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.kasbills. All rights reserved." "\0"
-            VALUE "OriginalFilename", "kasbill.exe" "\0"
-            VALUE "ProductName", "kasbill" "\0"
+            VALUE "InternalName", "ratnex" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 Ratnex. All rights reserved." "\0"
+            VALUE "OriginalFilename", "ratnex.exe" "\0"
+            VALUE "ProductName", "Ratnex" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

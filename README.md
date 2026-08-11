@@ -1,6 +1,6 @@
-# kasbill
+# Ratnex
 
-A new Flutter project.
+Gold billing software for jewellery shops.
 
 ## Getting Started
 
