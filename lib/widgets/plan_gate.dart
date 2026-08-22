@@ -17,7 +17,7 @@ class PlanLockedPanel extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.lock_outline,
               size: 40,
               color: RatnexColors.gold,

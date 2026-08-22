@@ -225,13 +225,13 @@ class _GstPageState extends State<GstPage> {
                                       fillColor: RatnexColors.surface,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: const BorderSide(
+                                        borderSide: BorderSide(
                                           color: RatnexColors.hairline,
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: const BorderSide(
+                                        borderSide: BorderSide(
                                           color: RatnexColors.hairline,
                                         ),
                                       ),
@@ -265,13 +265,13 @@ class _GstPageState extends State<GstPage> {
                                       fillColor: RatnexColors.surface,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: const BorderSide(
+                                        borderSide: BorderSide(
                                           color: RatnexColors.hairline,
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
-                                        borderSide: const BorderSide(
+                                        borderSide: BorderSide(
                                           color: RatnexColors.hairline,
                                         ),
                                       ),

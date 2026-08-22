@@ -120,11 +120,11 @@ class _ModSavedPageState extends State<ModSavedPage>
                                 Container(
                                   width: 72,
                                   height: 72,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: RatnexColors.goldSoft,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.check_rounded,
                                     size: 40,
                                     color: RatnexColors.gold,

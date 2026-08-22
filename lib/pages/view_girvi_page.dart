@@ -5,8 +5,11 @@ import 'package:intl/intl.dart';
 
 import '../services/girvi_pdf_service.dart';
 import '../services/shop_girvi_service.dart';
+import '../services/shop_profile_service.dart';
 import '../services/stock_image_helper.dart';
+import '../services/whatsapp_service.dart';
 import '../theme/ratnex_theme.dart';
+import '../widgets/ratnex_ui.dart';
 import 'create_girvi_page.dart';
 
 class ViewGirviPage extends StatefulWidget {
@@ -21,6 +24,31 @@ class ViewGirviPage extends StatefulWidget {
 class _ViewGirviPageState extends State<ViewGirviPage> {
   late ShopGirvi girvi;
   final _service = ShopGirviService();
+  ShopProfile? _shop;
+
+  /// Reminds the borrower their pledge is coming due — the single most useful
+  /// message a pawn book sends.
+  Future<void> _whatsapp() async {
+    final message = WhatsAppService.girviDueReminder(
+      shopName: _shop?.shopName ?? 'our shop',
+      customerName: girvi.customer.name,
+      girviNo: girvi.girviNo,
+      amountDue: girvi.totals.balance > 0
+          ? girvi.totals.balance
+          : girvi.totals.amountDue,
+      dueDate: girvi.dueDate,
+    );
+    final ok = await WhatsAppService.send(girvi.customer.phone, message);
+    if (!mounted || ok) return;
+    if (girvi.customer.phone == null || girvi.customer.phone!.trim().isEmpty) {
+      RatnexSnack.error(context, 'This girvi has no customer phone number');
+      return;
+    }
+    await WhatsAppService.copy(message);
+    if (mounted) {
+      RatnexSnack.show(context, 'WhatsApp unavailable — message copied');
+    }
+  }
   final _currency = NumberFormat.currency(
     locale: 'en_IN',
     symbol: '₹',
@@ -31,6 +59,9 @@ class _ViewGirviPageState extends State<ViewGirviPage> {
   void initState() {
     super.initState();
     girvi = widget.girvi;
+    ShopProfileService().watchProfile().first.then((p) {
+      if (mounted) setState(() => _shop = p);
+    }).catchError((_) {});
   }
 
   Color _statusColor(String s) {
@@ -329,7 +360,7 @@ class _ViewGirviPageState extends State<ViewGirviPage> {
                         const SizedBox(height: 8),
                         for (var i = 0; i < girvi.items.length; i++) ...[
                           if (i > 0)
-                            const Divider(color: RatnexColors.hairline),
+                            Divider(color: RatnexColors.hairline),
                           _ItemTile(
                             item: girvi.items[i],
                             currency: _currency,
@@ -358,7 +389,7 @@ class _ViewGirviPageState extends State<ViewGirviPage> {
                           'Interest so far',
                           _currency.format(girvi.interestSoFar.round()),
                         ),
-                        const Divider(color: RatnexColors.hairline),
+                        Divider(color: RatnexColors.hairline),
                         _row(
                           'Amount due (till due date)',
                           _currency.format(girvi.totals.amountDue.round()),
@@ -441,7 +472,7 @@ class _ViewGirviPageState extends State<ViewGirviPage> {
                             onPressed: _addPayment,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: RatnexColors.ink,
-                              side: const BorderSide(
+                              side: BorderSide(
                                 color: RatnexColors.hairline,
                               ),
                               minimumSize: const Size.fromHeight(46),
@@ -455,7 +486,7 @@ class _ViewGirviPageState extends State<ViewGirviPage> {
                             onPressed: _markClosed,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: RatnexColors.ink,
-                              side: const BorderSide(
+                              side: BorderSide(
                                 color: RatnexColors.hairline,
                               ),
                               minimumSize: const Size.fromHeight(46),
@@ -467,21 +498,42 @@ class _ViewGirviPageState extends State<ViewGirviPage> {
                     ),
                     const SizedBox(height: 10),
                   ],
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: _printSheet,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: RatnexColors.ink,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: _printSheet,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: RatnexColors.ink,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(Icons.print_outlined, size: 18),
+                            label: const Text('Print / Share'),
+                          ),
                         ),
                       ),
-                      icon: const Icon(Icons.print_outlined, size: 18),
-                      label: const Text('Print / Share receipt'),
-                    ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _whatsapp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                          ),
+                          child: const Icon(Icons.chat_outlined, size: 20),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -559,7 +611,7 @@ class _ItemTile extends StatelessWidget {
                   ? Image.memory(thumb, fit: BoxFit.cover)
                   : Container(
                       color: RatnexColors.goldSoft,
-                      child: const Icon(
+                      child: Icon(
                         Icons.diamond_outlined,
                         color: RatnexColors.gold,
                       ),

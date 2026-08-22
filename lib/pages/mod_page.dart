@@ -5,11 +5,38 @@ import '../components/ratnex_page_scaffold.dart';
 import '../services/shop_mod_service.dart';
 import '../services/stock_image_helper.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
+import '../widgets/ratnex_ui.dart';
 import 'create_mod_page.dart';
 import 'view_mod_page.dart';
 
-class ModPage extends StatelessWidget {
+class ModPage extends StatefulWidget {
   const ModPage({super.key});
+
+  @override
+  State<ModPage> createState() => _ModPageState();
+}
+
+class _ModPageState extends State<ModPage> {
+  final _search = TextEditingController();
+  String _query = '';
+  String _filter = 'all';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  bool _matches(ShopMod m) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    final digits = q.replaceAll(RegExp(r'\D'), '');
+    return m.modNo.toLowerCase().contains(q) ||
+        m.customer.name.toLowerCase().contains(q) ||
+        (digits.isNotEmpty && (m.customer.phone ?? '').contains(digits)) ||
+        m.items.any((i) => i.name.toLowerCase().contains(q));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +51,30 @@ class ModPage extends StatelessWidget {
       stream: service.watchMod(),
       builder: (context, snap) {
         final list = snap.data ?? const <ShopMod>[];
-        final completed =
-            list.where((m) => m.status == 'completed').length;
-        final cancelled =
-            list.where((m) => m.status == 'cancelled').length;
+        final completedList =
+            list.where((m) => m.status == 'completed').toList();
+        final cancelledList =
+            list.where((m) => m.status == 'cancelled').toList();
+        final completed = completedList.length;
+        final cancelled = cancelledList.length;
+
+        final now = DateTime.now();
+        final monthList = completedList
+            .where((m) => m.paidAt.year == now.year && m.paidAt.month == now.month)
+            .toList();
+        final monthSpend =
+            monthList.fold<double>(0, (s, m) => s + m.totals.purchaseAmount);
+        final monthGrams = monthList.fold<double>(
+          0,
+          (s, m) => s + m.items.fold<double>(0, (t, i) => t + i.netWeight),
+        );
+
+        var visible = switch (_filter) {
+          'completed' => completedList,
+          'cancelled' => cancelledList,
+          _ => list,
+        };
+        visible = visible.where(_matches).toList();
 
         return RatnexPageScaffold(
           title: 'Mod',
@@ -54,6 +101,55 @@ class ModPage extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'Paid this month',
+                      value: RatnexFormat.compact(monthSpend),
+                      caption: '${monthList.length} purchases',
+                      icon: Icons.swap_horiz,
+                      accent: RatnexColors.info,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'Gold taken in',
+                      value: RatnexFormat.grams(monthGrams),
+                      caption: 'net weight',
+                      icon: Icons.scale_outlined,
+                      accent: RatnexColors.gold,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'All time',
+                      value: '$completed',
+                      caption: '$cancelled cancelled',
+                      icon: Icons.handshake_outlined,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              RatnexSearchField(
+                hint: 'Search MOD no, customer or item',
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+              ),
+              const SizedBox(height: 10),
+              RatnexFilterChips(
+                selected: _filter,
+                options: [
+                  (value: 'all', label: 'All', count: list.length),
+                  (value: 'completed', label: 'Completed', count: completed),
+                  (value: 'cancelled', label: 'Cancelled', count: cancelled),
+                ],
+                onSelected: (v) => setState(() => _filter = v),
+              ),
+              const SizedBox(height: 14),
               const RatnexSectionLabel(text: 'All purchases'),
               const SizedBox(height: 8),
               if (snap.hasError)
@@ -67,59 +163,41 @@ class ModPage extends StatelessWidget {
                   ),
                 )
               else if (!snap.hasData)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(
-                    child: CircularProgressIndicator(color: RatnexColors.gold),
+                const RatnexListSkeleton()
+              else if (list.isEmpty)
+                RatnexEmptyState(
+                  icon: Icons.handshake_outlined,
+                  title: 'No old-gold purchases yet',
+                  message:
+                      'Buy customer ornaments with a proper appraisal, capture their ID proof and pay on the spot.',
+                  actionLabel: 'New purchase',
+                  onAction: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CreateModPage()),
                   ),
                 )
-              else if (list.isEmpty)
-                RatnexPanel(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.handshake_outlined,
-                          size: 32,
-                          color: RatnexColors.gold,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No mod purchases yet',
-                          style: RatnexTheme.label(
-                            size: 15,
-                            weight: FontWeight.w700,
-                            color: RatnexColors.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Buy customer ornaments with appraisal and pay directly.',
-                          style: RatnexTheme.label(size: 13),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
+              else if (visible.isEmpty)
+                RatnexEmptyState(
+                  icon: Icons.search_off,
+                  title: 'Nothing matches',
+                  message: 'Try a different MOD number, name or filter.',
                 )
               else
                 RatnexPanel(
                   child: Column(
                     children: [
-                      for (var i = 0; i < list.length; i++) ...[
+                      for (var i = 0; i < visible.length; i++) ...[
                         if (i > 0)
-                          const Divider(
+                          Divider(
                             height: 1,
                             color: RatnexColors.hairline,
                           ),
                         _ModRow(
-                          mod: list[i],
+                          mod: visible[i],
                           currency: currency,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => ViewModPage(mod: list[i]),
+                                builder: (_) => ViewModPage(mod: visible[i]),
                               ),
                             );
                           },
@@ -169,7 +247,7 @@ class _ModRow extends StatelessWidget {
                     ? Image.memory(thumb, fit: BoxFit.cover)
                     : Container(
                         color: RatnexColors.goldSoft,
-                        child: const Icon(
+                        child: Icon(
                           Icons.diamond_outlined,
                           color: RatnexColors.gold,
                           size: 22,

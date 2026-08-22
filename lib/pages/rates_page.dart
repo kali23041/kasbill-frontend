@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../components/ratnex_page_scaffold.dart';
 import '../services/ibja_rates_service.dart';
+import '../services/shop_profile_service.dart';
+import '../services/shop_rates_service.dart';
+import '../services/whatsapp_service.dart';
 import '../theme/ratnex_theme.dart';
+import '../widgets/ratnex_ui.dart';
 
 class RatesPage extends StatefulWidget {
   const RatesPage({super.key});
@@ -13,9 +17,39 @@ class RatesPage extends StatefulWidget {
 
 class _RatesPageState extends State<RatesPage> {
   final _service = IbjaRatesService();
+  final _shopRates = ShopRatesService();
   IbjaRates? _rates;
   bool _loading = true;
   String? _error;
+
+  /// Copies today's shop rates as a message the owner can forward to their
+  /// customer groups — the thing most shops do by hand every morning.
+  Future<void> _shareRates() async {
+    final metals = await _shopRates.watchMetals().first;
+    if (!mounted) return;
+    if (metals.isEmpty) {
+      RatnexSnack.show(
+        context,
+        'Set your shop rates first in Profile → Metals & Diamonds',
+      );
+      return;
+    }
+    final profile = await ShopProfileService().watchProfile().first;
+    if (!mounted) return;
+
+    final message = WhatsAppService.rateMessage(
+      shopName: profile.shopName ?? 'our shop',
+      rates: {
+        for (final m in metals.take(8)) m.label: m.shopRatePerGram,
+      },
+    );
+    await WhatsAppService.copy(message);
+    if (!mounted) return;
+    RatnexSnack.success(
+      context,
+      "Today's rates copied — paste into any WhatsApp group",
+    );
+  }
 
   @override
   void initState() {
@@ -59,13 +93,27 @@ class _RatesPageState extends State<RatesPage> {
       title: 'Rates',
       subtitle: 'IBJA benchmark  ·  $dateLabel',
       onRefresh: _load,
-      trailing: RatnexHeaderChip(
-        label: _loading ? '...' : (_rates?.session ?? '—'),
-        color: RatnexColors.up,
-        onTap: _loading ? null : _load,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: "Share today's rates",
+            onPressed: _shareRates,
+            icon: const Icon(
+              Icons.chat_outlined,
+              size: 20,
+              color: Color(0xFF25D366),
+            ),
+          ),
+          RatnexHeaderChip(
+            label: _loading ? '...' : (_rates?.session ?? '—'),
+            color: RatnexColors.up,
+            onTap: _loading ? null : _load,
+          ),
+        ],
       ),
       body: _loading
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.only(top: 40),
               child: Center(
                 child: CircularProgressIndicator(color: RatnexColors.gold),
@@ -143,7 +191,7 @@ class _RatesPageState extends State<RatesPage> {
                                 .format(_rates!.gold22kPerGram.round()),
                             note: 'Jewellery standard',
                           ),
-                          const Divider(
+                          Divider(
                             height: 1,
                             indent: 12,
                             endIndent: 12,
@@ -155,7 +203,7 @@ class _RatesPageState extends State<RatesPage> {
                                 .format(_rates!.gold24kPerGram.round()),
                             note: 'Investment grade',
                           ),
-                          const Divider(
+                          Divider(
                             height: 1,
                             indent: 12,
                             endIndent: 12,

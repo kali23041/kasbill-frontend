@@ -11,6 +11,8 @@ import 'pages/profile_page.dart';
 import 'pages/stock_page.dart';
 import 'services/checkout_service.dart';
 import 'services/deep_link_service.dart';
+import 'services/notifications_service.dart';
+import 'services/reminder_scanner_service.dart';
 import 'services/shop_cash_service.dart';
 import 'services/shop_plan_service.dart';
 import 'theme/ratnex_theme.dart';
@@ -51,6 +53,7 @@ class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
   final _planService = ShopPlanService();
   final _cashService = ShopCashService();
+  final _reminderScanner = ReminderScannerService();
   StreamSubscription<Uri>? _deepLinkSub;
   bool _trialCheckoutStarted = false;
   bool _handlingDeepLink = false;
@@ -60,9 +63,16 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _startDeepLinks();
+    _startNotifications();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybePromptCash();
     });
+  }
+
+  Future<void> _startNotifications() async {
+    // Neither of these should ever block the shell from rendering.
+    await NotificationsService.instance.start();
+    await _reminderScanner.scanIfStale();
   }
 
   Future<void> _startDeepLinks() async {

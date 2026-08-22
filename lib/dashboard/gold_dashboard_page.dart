@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../components/rate_board.dart';
+import '../ledger/udhaar_page.dart';
 import '../main_shell.dart';
 import '../pages/analytics_page.dart';
 import '../pages/create_bill_page.dart';
 import '../pages/mod_page.dart';
 import '../pages/plans_page.dart';
+import '../pages/reminders_page.dart';
+import '../pages/reports_page.dart';
 import '../pages/view_bill_page.dart';
+import '../repairs/repairs_page.dart';
+import '../schemes/schemes_page.dart';
 import '../services/ibja_rates_service.dart';
+import '../services/notifications_service.dart';
 import '../services/shop_bills_service.dart';
 import '../services/shop_cash_service.dart';
 import '../services/shop_rates_service.dart';
 import '../theme/ratnex_theme.dart';
 import '../widgets/daily_cash_prompt.dart';
+import '../widgets/rate_delta_strip.dart';
+import '../widgets/ratnex_ui.dart';
 
 class GoldDashboardPage extends StatefulWidget {
   const GoldDashboardPage({super.key});
@@ -165,7 +173,9 @@ class _GoldDashboardPageState extends State<GoldDashboardPage>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _Header(today: today),
-                                  const SizedBox(height: 14),
+                                  const SizedBox(height: 12),
+                                  const _ReminderBanner(),
+                                  const SizedBox(height: 2),
                                   StreamBuilder<List<ShopMetalRate>>(
                                     stream: _shopRates.watchMetals(),
                                     builder: (context, snap) {
@@ -184,16 +194,27 @@ class _GoldDashboardPageState extends State<GoldDashboardPage>
                                               .recordSnapshotsForMetals(metals);
                                         });
                                       }
-                                      return RatnexRateBoard.fromShopMetals(
-                                        loading: waiting,
-                                        error: snap.hasError
-                                            ? 'Could not load shop metals'
-                                            : null,
-                                        metals: metals,
-                                        currency: currency,
-                                        onRetry: _loadRates,
-                                        liveRates: _rates,
-                                        context: context,
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          RatnexRateBoard.fromShopMetals(
+                                            loading: waiting,
+                                            error: snap.hasError
+                                                ? 'Could not load shop metals'
+                                                : null,
+                                            metals: metals,
+                                            currency: currency,
+                                            onRetry: _loadRates,
+                                            liveRates: _rates,
+                                            context: context,
+                                          ),
+                                          if (metals != null &&
+                                              metals.isNotEmpty) ...[
+                                            const SizedBox(height: 10),
+                                            RateDeltaStrip(metals: metals),
+                                          ],
+                                        ],
                                       );
                                     },
                                   ),
@@ -232,6 +253,8 @@ class _GoldDashboardPageState extends State<GoldDashboardPage>
                                         MainShellScope.of(context)
                                             ?.selectTab(3),
                                   ),
+                                  const SizedBox(height: 6),
+                                  const _SecondaryActions(),
                                   const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment:
@@ -383,7 +406,7 @@ class _CashTodayCardState extends State<_CashTodayCard> {
                   'Cash out',
                   _currency.format(day.outsTotal.round()),
                 ),
-                const Divider(color: RatnexColors.hairline),
+                Divider(color: RatnexColors.hairline),
                 _cashLine(
                   'Balance',
                   _currency.format(day.balance.round()),
@@ -510,7 +533,7 @@ class _CashTodayCardState extends State<_CashTodayCard> {
                       color: RatnexColors.goldSoft,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.payments_outlined,
                       color: RatnexColors.gold,
                       size: 20,
@@ -544,7 +567,7 @@ class _CashTodayCardState extends State<_CashTodayCard> {
                     style: RatnexTheme.label(size: 11),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right,
                     size: 18,
                     color: RatnexColors.muted,
@@ -610,7 +633,7 @@ class _TodayPerformance extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 2),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right,
                     size: 18,
                     color: RatnexColors.gold,
@@ -854,9 +877,9 @@ class _BillsPanel extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: RatnexColors.hairline),
+          Divider(height: 1, thickness: 1, color: RatnexColors.hairline),
           if (loading)
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(24),
               child: Center(
                 child: CircularProgressIndicator(color: RatnexColors.gold),
@@ -993,7 +1016,7 @@ class _BillsPanel extends StatelessWidget {
                     ),
                   ),
                   if (index != bills.length - 1)
-                    const Divider(
+                    Divider(
                       height: 1,
                       thickness: 1,
                       indent: 12,
@@ -1003,6 +1026,140 @@ class _BillsPanel extends StatelessWidget {
                 ],
               );
             }),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shows what needs chasing today, straight on the home screen.
+class _ReminderBanner extends StatelessWidget {
+  const _ReminderBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<ShopReminder>>(
+      stream: NotificationsService.instance.watchReminders(),
+      builder: (context, snap) {
+        final all = snap.data ?? const <ShopReminder>[];
+        final unread = all.where((r) => !r.read).toList();
+        if (unread.isEmpty) return const SizedBox.shrink();
+
+        final first = unread.first;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: RatnexCard(
+            borderColor: RatnexColors.gold.withValues(alpha: 0.35),
+            padding: const EdgeInsets.all(12),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RemindersPage()),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: RatnexColors.goldSoft,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Icon(
+                    Icons.notifications_active_outlined,
+                    size: 17,
+                    color: RatnexColors.gold,
+                  ),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        first.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: RatnexTheme.label(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          color: RatnexColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        unread.length == 1
+                            ? first.body
+                            : '${unread.length - 1} more need chasing',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: RatnexTheme.label(size: 11.5),
+                      ),
+                    ],
+                  ),
+                ),
+                RatnexBadge(
+                  label: '${unread.length}',
+                  color: RatnexColors.gold,
+                  solid: true,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The modules that do not have a bottom-nav tab of their own.
+class _SecondaryActions extends StatelessWidget {
+  const _SecondaryActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 72,
+      child: Row(
+        children: [
+          Expanded(
+            child: _ActionButton(
+              label: 'Udhaar',
+              icon: Icons.account_balance_wallet_outlined,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const UdhaarPage()),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _ActionButton(
+              label: 'Repairs',
+              icon: Icons.build_outlined,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RepairsPage()),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _ActionButton(
+              label: 'Schemes',
+              icon: Icons.savings_outlined,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SchemesPage()),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _ActionButton(
+              label: 'Reports',
+              icon: Icons.insights_outlined,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ReportsPage()),
+              ),
+            ),
+          ),
         ],
       ),
     );

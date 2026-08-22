@@ -4,19 +4,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../services/app_prefs_service.dart';
 import '../services/shop_bills_service.dart';
 import '../services/shop_customers_service.dart';
 import '../services/shop_gst_service.dart';
+import '../services/shop_ledger_service.dart';
 import '../services/shop_profile_service.dart';
+import '../services/shop_rates_service.dart';
+import '../services/shop_settings_service.dart';
 import '../services/shop_stock_service.dart';
 import '../services/stock_image_helper.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
+import '../widgets/barcode_scan_sheet.dart';
+import '../widgets/calc_text_field.dart';
+import '../widgets/ratnex_ui.dart';
 import 'bill_saved_page.dart';
 
 class CreateBillPage extends StatefulWidget {
   final ShopBill? existing;
 
-  const CreateBillPage({super.key, this.existing});
+  /// Pre-fills a brand new bill from an old one — the "repeat customer"
+  /// shortcut. Unlike [existing] this always creates a new bill.
+  final ShopBill? duplicateOf;
+
+  const CreateBillPage({super.key, this.existing, this.duplicateOf});
 
   @override
   State<CreateBillPage> createState() => _CreateBillPageState();
@@ -28,6 +40,8 @@ class _CreateBillPageState extends State<CreateBillPage> {
   final _profile = ShopProfileService();
   final _gst = ShopGstService();
   final _customers = ShopCustomersService();
+  final _ledger = ShopLedgerService();
+  final _shopSettings = ShopSettingsService();
   final _currency = NumberFormat.currency(
     locale: 'en_IN',
     symbol: '₹',
@@ -40,8 +54,10 @@ class _CreateBillPageState extends State<CreateBillPage> {
   final _customerGstin = TextEditingController();
   final _paidCtrl = TextEditingController(text: '0');
   final _notesCtrl = TextEditingController();
+  final _customerPan = TextEditingController();
 
   final List<BillLineItem> _items = [];
+  final List<BillExchangeItem> _exchange = [];
   final Set<int> _expandedItems = {};
   String? _paymentMode;
   bool _saving = false;
@@ -52,19 +68,24 @@ class _CreateBillPageState extends State<CreateBillPage> {
   List<ShopCustomer> _allCustomers = const [];
   bool _fillingCustomer = false;
   StreamSubscription<List<ShopCustomer>>? _customersSub;
+  ShopSettings _settings = ShopSettings.defaults;
+  Timer? _draftTimer;
+  bool _draftRestored = false;
 
   bool get _isEdit => widget.existing != null;
 
   @override
   void initState() {
     super.initState();
-    final e = widget.existing;
+    _loadShopSettings();
+    final e = widget.existing ?? widget.duplicateOf;
     if (e != null) {
       _customerName.text = e.customer.name;
       _customerPhone.text = e.customer.phone ?? '';
       _customerAddress.text = e.customer.address ?? '';
       _customerGstin.text = e.customer.gstin ?? '';
       _items.addAll(e.items);
+      _exchange.addAll(e.exchange);
       _paymentMode = e.paymentMode;
       _paidCtrl.text = e.totals.paidAmount.round().toString();
       _notesCtrl.text = e.notes ?? '';
@@ -72,11 +93,21 @@ class _CreateBillPageState extends State<CreateBillPage> {
           (e.customer.address?.isNotEmpty ?? false) ||
           (e.customer.gstin?.isNotEmpty ?? false);
       _showNotes = e.notes?.isNotEmpty ?? false;
+      if (widget.duplicateOf != null) {
+        // A repeat is a fresh sale: carry the customer and the basket, not the
+        // money that was already collected on the old bill.
+        _exchange.clear();
+        _paidCtrl.text = '0';
+        _paymentMode = null;
+        _notesCtrl.clear();
+        _showNotes = false;
+      }
     }
     _paidCtrl.addListener(() => setState(() {}));
     void onCustomerType() {
       if (_fillingCustomer) return;
       setState(() {});
+      _scheduleDraftSave();
     }
 
     _customerName.addListener(onCustomerType);
@@ -85,11 +116,199 @@ class _CreateBillPageState extends State<CreateBillPage> {
       if (!mounted) return;
       setState(() => _allCustomers = list);
     });
+    if (widget.existing == null && widget.duplicateOf == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _offerDraft());
+    }
   }
+
+  Future<void> _loadShopSettings() async {
+    try {
+      final s = await _shopSettings.getSettings();
+      if (mounted) setState(() => _settings = s);
+    } catch (_) {
+      // Defaults are fine — never block billing on settings.
+    }
+  }
+
+  // ---- Draft autosave ----------------------------------------------------
+
+  Map<String, dynamic> _draftMap() => {
+        'name': _customerName.text,
+        'phone': _customerPhone.text,
+        'address': _customerAddress.text,
+        'gstin': _customerGstin.text,
+        'pan': _customerPan.text,
+        'paid': _paidCtrl.text,
+        'mode': _paymentMode,
+        'notes': _notesCtrl.text,
+        'items': _items.map((e) => e.toMap()).toList(),
+        'exchange': _exchange.map((e) => e.toMap()).toList(),
+        'savedAt': DateTime.now().toIso8601String(),
+      };
+
+  void _scheduleDraftSave() {
+    if (!_settings.autoSaveDrafts) return;
+    if (widget.existing != null) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 900), () {
+      if (_items.isEmpty && _customerName.text.trim().isEmpty) return;
+      AppPrefs.instance.saveBillDraft(_draftMap());
+    });
+  }
+
+  Future<void> _offerDraft() async {
+    if (_draftRestored || !_settings.autoSaveDrafts) return;
+    final draft = AppPrefs.instance.readBillDraft();
+    if (draft == null) return;
+    final items = (draft['items'] as List?) ?? const [];
+    if (items.isEmpty && (draft['name'] as String? ?? '').trim().isEmpty) {
+      await AppPrefs.instance.clearBillDraft();
+      return;
+    }
+    if (!mounted) return;
+
+    final savedAt = DateTime.tryParse(draft['savedAt'] as String? ?? '');
+    final restore = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('Unfinished bill', style: RatnexTheme.brand(size: 19)),
+        content: Text(
+          'You were writing a bill for ${(draft['name'] as String?)?.trim().isEmpty ?? true ? 'a customer' : draft['name']} with ${items.length} item${items.length == 1 ? '' : 's'}'
+          '${savedAt == null ? '' : ' ${RatnexFormat.relativeDays(savedAt).toLowerCase()}'}. Bring it back?',
+          style: RatnexTheme.label(size: 13, color: RatnexColors.ink),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Start fresh', style: RatnexTheme.label(size: 13)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Restore',
+              style: RatnexTheme.label(
+                size: 13,
+                weight: FontWeight.w700,
+                color: RatnexColors.gold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    _draftRestored = true;
+    if (restore != true) {
+      await AppPrefs.instance.clearBillDraft();
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _customerName.text = draft['name'] as String? ?? '';
+      _customerPhone.text = draft['phone'] as String? ?? '';
+      _customerAddress.text = draft['address'] as String? ?? '';
+      _customerGstin.text = draft['gstin'] as String? ?? '';
+      _customerPan.text = draft['pan'] as String? ?? '';
+      _paidCtrl.text = draft['paid'] as String? ?? '0';
+      _paymentMode = draft['mode'] as String?;
+      _notesCtrl.text = draft['notes'] as String? ?? '';
+      _showNotes = _notesCtrl.text.isNotEmpty;
+      _items
+        ..clear()
+        ..addAll(
+          items.whereType<Map>().map(
+                (e) => BillLineItem.fromMap(Map<String, dynamic>.from(e)),
+              ),
+        );
+      _exchange
+        ..clear()
+        ..addAll(
+          ((draft['exchange'] as List?) ?? const [])
+              .whereType<Map>()
+              .map(
+                (e) => BillExchangeItem.fromMap(Map<String, dynamic>.from(e)),
+              ),
+        );
+    });
+  }
+
+  // ---- Scan a tag straight into the bill ---------------------------------
+
+  Future<void> _scanIntoBill() async {
+    final code = await showBarcodeScanner(
+      context,
+      title: 'Scan tag',
+      hint: 'Scan the barcode on the item tag to add it to this bill',
+    );
+    if (code == null || !mounted) return;
+
+    final stock = await _stock.watchStock().first;
+    final gst = await _gst.getSettings();
+    if (!mounted) return;
+
+    final needle = code.trim().toLowerCase();
+    StockItem? match;
+    for (final item in stock) {
+      final barcode = (item.barcode ?? '').trim().toLowerCase();
+      final sku = (item.sku ?? '').trim().toLowerCase();
+      final huid = (item.huid ?? '').trim().toLowerCase();
+      if (barcode == needle || sku == needle || huid == needle) {
+        match = item;
+        break;
+      }
+    }
+
+    if (match == null) {
+      RatnexSnack.error(context, 'No stock item has the code $code');
+      return;
+    }
+
+    final line = BillLineItem.compute(
+      stockId: match.id,
+      name: match.name,
+      category: match.categoryName,
+      metalLabel: match.metalLabel,
+      karat: match.karat,
+      barcode: match.barcode,
+      grossWeight: match.grossWeight,
+      netWeight: match.netWeight,
+      ratePerGram: match.shopRatePerGram,
+      makingCharge: match.makingCharge,
+      makingType: match.makingChargeType,
+      wastagePercent: match.wastagePercent,
+      stoneCharge: match.stoneCharge,
+      otherCharge: match.otherCharge,
+      applyGst: gst.isConfigured,
+      gstPercent: gst.gstPercent,
+    );
+
+    setState(() {
+      _items.add(line);
+      _expandedItems.add(_items.length - 1);
+    });
+    _scheduleDraftSave();
+    RatnexSnack.success(context, '${match.name} added');
+  }
+
+  // ---- Compliance --------------------------------------------------------
+
+  /// Section 269ST bites on cash of ₹2,00,000 or more taken from one person.
+  bool get _breaches269ST =>
+      _settings.warnCash269ST &&
+      (_paymentMode == 'cash') &&
+      RatnexValidate.breaches269ST(_totals.paidAmount);
+
+  bool get _needsPan =>
+      _settings.requirePanAboveLimit &&
+      RatnexValidate.needsPan(_totals.grandTotal) &&
+      !RatnexValidate.isPan(_customerPan.text);
 
   @override
   void dispose() {
+    _draftTimer?.cancel();
     _customersSub?.cancel();
+    _customerPan.dispose();
     _customerName.dispose();
     _customerPhone.dispose();
     _customerAddress.dispose();
@@ -99,13 +318,19 @@ class _CreateBillPageState extends State<CreateBillPage> {
     super.dispose();
   }
 
+  double get _exchangeValue => BillExchangeItem.totalOf(_exchange);
+
   BillTotals get _totals {
     final paid = double.tryParse(_paidCtrl.text.trim()) ?? 0;
-    return BillTotals.fromItems(items: _items, paidAmount: paid);
+    return BillTotals.fromItems(
+      items: _items,
+      paidAmount: paid,
+      exchangeValue: _exchangeValue,
+    );
   }
 
   String get _status => ShopBill.statusFromPaid(
-        grandTotal: _totals.grandTotal,
+        grandTotal: _totals.netPayable,
         paidAmount: _totals.paidAmount,
       );
 
@@ -138,6 +363,112 @@ class _CreateBillPageState extends State<CreateBillPage> {
         _expandedItems.add(_items.length - 1);
       }
     });
+    _scheduleDraftSave();
+  }
+
+  String? _composedNotes() {
+    final notes = _notesCtrl.text.trim();
+    final pan = _customerPan.text.trim().toUpperCase();
+    if (pan.isEmpty) return notes.isEmpty ? null : notes;
+    final panLine = 'Customer PAN: $pan';
+    return notes.isEmpty ? panLine : '$notes\n$panLine';
+  }
+
+  Future<bool?> _confirmCashLimit() {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('Cash limit', style: RatnexTheme.brand(size: 19)),
+        content: Text(
+          'You are taking ${RatnexFormat.money(_totals.paidAmount)} in cash. '
+          'Section 269ST charges a penalty equal to the amount on cash receipts '
+          'of ₹2,00,000 or more from one person in a day.\n\n'
+          'Take part of it digitally, or continue if you have already accounted for this.',
+          style: RatnexTheme.label(size: 13, color: RatnexColors.ink),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Change payment',
+              style: RatnexTheme.label(size: 13, weight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Save anyway',
+              style: RatnexTheme.label(
+                size: 13,
+                weight: FontWeight.w700,
+                color: RatnexColors.down,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _confirmMissingPan() {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('PAN needed', style: RatnexTheme.brand(size: 19)),
+        content: Text(
+          'This bill is ${RatnexFormat.money(_totals.grandTotal)}. The customer\'s PAN '
+          'is required on jewellery sales of ₹2,00,000 or more.\n\n'
+          'Add it in the customer section, or save without it.',
+          style: RatnexTheme.label(size: 13, color: RatnexColors.ink),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Add PAN',
+              style: RatnexTheme.label(size: 13, weight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Save anyway',
+              style: RatnexTheme.label(
+                size: 13,
+                weight: FontWeight.w700,
+                color: RatnexColors.down,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Old gold taken in against this sale.
+  Future<void> _openExchangeSheet({int? editIndex}) async {
+    final metals = await ShopRatesService().watchMetals().first;
+    if (!mounted) return;
+    final item = await showModalBottomSheet<BillExchangeItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ExchangeSheet(
+        metals: metals,
+        existing: editIndex == null ? null : _exchange[editIndex],
+      ),
+    );
+    if (item == null || !mounted) return;
+    setState(() {
+      if (editIndex != null) {
+        _exchange[editIndex] = item;
+      } else {
+        _exchange.add(item);
+      }
+    });
+    _scheduleDraftSave();
   }
 
   Future<void> _save() async {
@@ -148,6 +479,15 @@ class _CreateBillPageState extends State<CreateBillPage> {
     if (_items.isEmpty) {
       _toast('Add at least one item');
       return;
+    }
+
+    if (_breaches269ST) {
+      final proceed = await _confirmCashLimit();
+      if (proceed != true) return;
+    }
+    if (_needsPan) {
+      final proceed = await _confirmMissingPan();
+      if (proceed != true) return;
     }
 
     setState(() => _saving = true);
@@ -166,8 +506,18 @@ class _CreateBillPageState extends State<CreateBillPage> {
         ));
       }
 
+      // A continuous per-financial-year series when the shop asks for one.
+      var billNo = widget.existing?.billNo ?? '';
+      if (billNo.isEmpty && _settings.sequentialInvoiceNo) {
+        try {
+          billNo = await _shopSettings.nextInvoiceNumber();
+        } catch (e) {
+          debugPrint('Sequential invoice number unavailable: $e');
+        }
+      }
+
       final draft = ShopBill(
-        billNo: widget.existing?.billNo ?? '',
+        billNo: billNo,
         customer: BillCustomer(
           name: _customerName.text.trim(),
           phone: _customerPhone.text.trim().isEmpty
@@ -181,13 +531,14 @@ class _CreateBillPageState extends State<CreateBillPage> {
               : _customerGstin.text.trim(),
         ),
         items: List.of(_items),
+        exchange: List.of(_exchange),
         totals: totals,
         paymentStatus: status,
         paymentMode: _paymentMode,
         payments: payments.isNotEmpty
             ? payments
             : (widget.existing?.payments ?? const []),
-        notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        notes: _composedNotes(),
         shopSnapshot: BillShopSnapshot.fromProfile(
           profile,
           gstNumber: gst.isConfigured ? gst.gstNumber : null,
@@ -210,6 +561,25 @@ class _CreateBillPageState extends State<CreateBillPage> {
         gstin: draft.customer.gstin,
         bumpBillCount: !_isEdit,
       );
+
+      // Anything left unpaid becomes udhaar so it shows up in collections
+      // instead of quietly disappearing.
+      if (!_isEdit && saved.totals.balance > 0.5) {
+        try {
+          await _ledger.recordBillBalance(
+            customerName: saved.customer.name,
+            phone: saved.customer.phone,
+            billNo: saved.billNo,
+            balance: saved.totals.balance,
+            dueInDays: _settings.udhaarDueDays,
+            billedAt: saved.billedAt,
+          );
+        } catch (e) {
+          debugPrint('Udhaar entry skipped: $e');
+        }
+      }
+
+      await AppPrefs.instance.clearBillDraft();
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -262,11 +632,11 @@ class _CreateBillPageState extends State<CreateBillPage> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -277,12 +647,28 @@ class _CreateBillPageState extends State<CreateBillPage> {
 
     return Scaffold(
       backgroundColor: RatnexColors.surface,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddItem(),
-        backgroundColor: RatnexColors.ink,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Add item'),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'scanTag',
+            onPressed: _scanIntoBill,
+            backgroundColor: RatnexColors.panel,
+            foregroundColor: RatnexColors.ink,
+            elevation: 2,
+            tooltip: 'Scan a tag',
+            child: const Icon(Icons.qr_code_scanner),
+          ),
+          const SizedBox(width: 10),
+          FloatingActionButton.extended(
+            heroTag: 'addItem',
+            onPressed: () => _openAddItem(),
+            backgroundColor: RatnexColors.ink,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add),
+            label: const Text('Add item'),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -395,7 +781,7 @@ class _CreateBillPageState extends State<CreateBillPage> {
                             children: [
                               for (var i = 0; i < _items.length; i++) ...[
                                 if (i > 0)
-                                  const Divider(color: RatnexColors.hairline),
+                                  Divider(color: RatnexColors.hairline),
                                 _BillItemRow(
                                   item: _items[i],
                                   currency: _currency,
@@ -431,6 +817,103 @@ class _CreateBillPageState extends State<CreateBillPage> {
                               ],
                             ],
                           ),
+                  ),
+                  const SizedBox(height: 12),
+                  _Card(
+                    title: 'Old gold exchange',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_exchange.isEmpty)
+                          Text(
+                            'Taking old jewellery against this purchase? Add it here and the credit comes off what the customer pays.',
+                            style: RatnexTheme.label(size: 12),
+                          )
+                        else
+                          for (var i = 0; i < _exchange.length; i++)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(9),
+                                onTap: () => _openExchangeSheet(editIndex: i),
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: RatnexColors.surface,
+                                    borderRadius: BorderRadius.circular(9),
+                                    border: Border.all(
+                                      color: RatnexColors.hairline,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _exchange[i].name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: RatnexTheme.label(
+                                                size: 13,
+                                                weight: FontWeight.w700,
+                                                color: RatnexColors.ink,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '${RatnexFormat.grams(_exchange[i].netWeight)} @ ${RatnexFormat.money(_exchange[i].ratePerGram)}/g'
+                                              '${_exchange[i].deductionPercent > 0 ? ' · −${_exchange[i].deductionPercent.toStringAsFixed(1)}%' : ''}',
+                                              style:
+                                                  RatnexTheme.label(size: 11),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        '− ${RatnexFormat.money(_exchange[i].value)}',
+                                        style: RatnexTheme.money(
+                                          size: 13.5,
+                                          color: RatnexColors.up,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        tooltip: 'Remove',
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed: () {
+                                          setState(() => _exchange.removeAt(i));
+                                          _scheduleDraftSave();
+                                        },
+                                        icon: Icon(
+                                          Icons.close,
+                                          size: 17,
+                                          color: RatnexColors.muted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () => _openExchangeSheet(),
+                          icon: const Icon(Icons.swap_horiz, size: 17),
+                          label: Text(
+                            _exchange.isEmpty
+                                ? 'Add old gold'
+                                : 'Add another piece',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: RatnexColors.ink,
+                            side: BorderSide(color: RatnexColors.hairline),
+                            minimumSize: const Size.fromHeight(44),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _Card(
@@ -494,6 +977,48 @@ class _CreateBillPageState extends State<CreateBillPage> {
                                     : RatnexColors.down,
                           ),
                         ),
+                        if (totals.balance > 0.5 &&
+                            _customerPhone.text.trim().isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          RatnexNotice(
+                            message:
+                                '${RatnexFormat.money(totals.balance)} will be added to ${_customerName.text.trim().isEmpty ? 'this customer' : _customerName.text.trim()}\'s udhaar, due in ${_settings.udhaarDueDays} days.',
+                            color: RatnexColors.warn,
+                            icon: Icons.account_balance_wallet_outlined,
+                          ),
+                        ],
+                        if (_breaches269ST) ...[
+                          const SizedBox(height: 10),
+                          RatnexNotice(
+                            message:
+                                'Cash of ₹2,00,000 or more from one person attracts a penalty under Section 269ST. Split it or take part digitally.',
+                            color: RatnexColors.down,
+                            icon: Icons.gavel_outlined,
+                          ),
+                        ],
+                        if (_settings.requirePanAboveLimit &&
+                            RatnexValidate.needsPan(totals.grandTotal)) ...[
+                          const SizedBox(height: 10),
+                          RatnexNotice(
+                            message: RatnexValidate.isPan(_customerPan.text)
+                                ? 'PAN captured. It will be recorded on this bill.'
+                                : 'PAN is required from the customer on sales of ₹2,00,000 or more.',
+                            color: RatnexValidate.isPan(_customerPan.text)
+                                ? RatnexColors.up
+                                : RatnexColors.warn,
+                            icon: Icons.badge_outlined,
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _customerPan,
+                            textCapitalization: TextCapitalization.characters,
+                            maxLength: 10,
+                            onChanged: (_) => setState(() {}),
+                            decoration: _dec('Customer PAN (ABCDE1234F)')
+                                .copyWith(counterText: ''),
+                            style: _fs(),
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         _ExpandToggle(
                           expanded: _showNotes,
@@ -519,10 +1044,33 @@ class _CreateBillPageState extends State<CreateBillPage> {
                       children: [
                         _totalRow('Taxable', totals.taxable),
                         _totalRow('GST', totals.gst),
-                        const Divider(color: RatnexColors.hairline),
+                        Divider(color: RatnexColors.hairline),
                         _totalRow('Grand total', totals.grandTotal, bold: true),
+                        if (totals.hasExchange) ...[
+                          _totalRow('Old gold credit', -totals.exchangeValue),
+                          _totalRow('Net payable', totals.netPayable,
+                              bold: true),
+                        ],
                         _totalRow('Paid', totals.paidAmount),
                         _totalRow('Balance', totals.balance, bold: true),
+                        if (_settings.showAmountInWords &&
+                            totals.grandTotal > 0) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              RatnexFormat.amountInWords(
+                                _settings.roundOffTotals
+                                    ? totals.netPayable.roundToDouble()
+                                    : totals.netPayable,
+                              ),
+                              style: RatnexTheme.label(
+                                size: 11.5,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -533,7 +1081,7 @@ class _CreateBillPageState extends State<CreateBillPage> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: RatnexColors.panel,
                   border: Border(
                     top: BorderSide(color: RatnexColors.hairline),
@@ -664,7 +1212,7 @@ class _CustomerSuggestions extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < suggestions.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: RatnexColors.hairline),
+            if (i > 0) Divider(height: 1, color: RatnexColors.hairline),
             ListTile(
               dense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
@@ -685,7 +1233,7 @@ class _CustomerSuggestions extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: RatnexTheme.label(size: 11),
               ),
-              trailing: const Icon(
+              trailing: Icon(
                 Icons.person_outline,
                 size: 18,
                 color: RatnexColors.muted,
@@ -759,7 +1307,7 @@ class _BillItemRow extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onDelete,
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
                     size: 18,
                     color: RatnexColors.muted,
@@ -1043,11 +1591,11 @@ class _AddBillItemSheetState extends State<_AddBillItemSheet> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -1458,7 +2006,7 @@ class _StockPickTile extends StatelessWidget {
                           ? Image.memory(thumb, fit: BoxFit.cover)
                           : Container(
                               color: RatnexColors.goldSoft,
-                              child: const Icon(
+                              child: Icon(
                                 Icons.diamond_outlined,
                                 color: RatnexColors.gold,
                                 size: 32,
@@ -1471,7 +2019,7 @@ class _StockPickTile extends StatelessWidget {
                         right: 6,
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: RatnexColors.gold,
                             shape: BoxShape.circle,
                           ),
@@ -1520,6 +2068,295 @@ class _StockPickTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Values a piece of old gold at the shop's own rate, minus a melting
+/// deduction. The customer sees exactly how the credit was worked out.
+class _ExchangeSheet extends StatefulWidget {
+  final List<ShopMetalRate> metals;
+  final BillExchangeItem? existing;
+
+  const _ExchangeSheet({required this.metals, this.existing});
+
+  @override
+  State<_ExchangeSheet> createState() => _ExchangeSheetState();
+}
+
+class _ExchangeSheetState extends State<_ExchangeSheet> {
+  late final _name =
+      TextEditingController(text: widget.existing?.name ?? 'Old gold');
+  late final _gross = TextEditingController(
+    text: widget.existing == null || widget.existing!.grossWeight == 0
+        ? ''
+        : widget.existing!.grossWeight.toString(),
+  );
+  late final _net = TextEditingController(
+    text: widget.existing == null || widget.existing!.netWeight == 0
+        ? ''
+        : widget.existing!.netWeight.toString(),
+  );
+  late final _rate = TextEditingController(
+    text: widget.existing == null || widget.existing!.ratePerGram == 0
+        ? ''
+        : widget.existing!.ratePerGram.toStringAsFixed(0),
+  );
+  late final _deduction = TextEditingController(
+    text: (widget.existing?.deductionPercent ?? 8).toStringAsFixed(0),
+  );
+
+  String? _metalLabel;
+  int? _karat;
+
+  @override
+  void initState() {
+    super.initState();
+    _metalLabel = widget.existing?.metalLabel;
+    _karat = widget.existing?.karat;
+    if (widget.existing == null && widget.metals.isNotEmpty) {
+      _applyMetal(widget.metals.first);
+    }
+  }
+
+  void _applyMetal(ShopMetalRate metal) {
+    setState(() {
+      _metalLabel = metal.label;
+      _karat = metal.karat;
+      _rate.text = metal.shopRatePerGram.toStringAsFixed(0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _gross.dispose();
+    _net.dispose();
+    _rate.dispose();
+    _deduction.dispose();
+    super.dispose();
+  }
+
+  BillExchangeItem get _draft => BillExchangeItem(
+        name: _name.text.trim().isEmpty ? 'Old gold' : _name.text.trim(),
+        metalLabel: _metalLabel,
+        karat: _karat,
+        grossWeight: parseAmount(_gross.text),
+        netWeight: parseAmount(_net.text),
+        ratePerGram: parseAmount(_rate.text),
+        deductionPercent: parseAmount(_deduction.text),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final draft = _draft;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: RatnexColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: RatnexColors.hairline,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('Old gold exchange', style: RatnexTheme.brand(size: 21)),
+              const SizedBox(height: 4),
+              Text(
+                'Valued at your own rate, less a melting deduction',
+                style: RatnexTheme.label(size: 12.5),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                style: RatnexTheme.label(size: 13.5, color: RatnexColors.ink),
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Old bangles, chain',
+                  labelStyle: RatnexTheme.label(size: 12.5),
+                  hintStyle: RatnexTheme.label(size: 12.5),
+                  filled: true,
+                  fillColor: RatnexColors.panel,
+                  isDense: true,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: RatnexColors.hairline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        BorderSide(color: RatnexColors.gold, width: 1.4),
+                  ),
+                ),
+              ),
+              if (widget.metals.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: widget.metals.take(5).map((m) {
+                    final active = m.label == _metalLabel;
+                    return ChoiceChip(
+                      label: Text(m.label),
+                      selected: active,
+                      onSelected: (_) => _applyMetal(m),
+                      labelStyle: RatnexTheme.label(
+                        size: 11.5,
+                        weight: FontWeight.w600,
+                        color: active ? Colors.white : RatnexColors.muted,
+                      ),
+                      selectedColor: RatnexColors.ink,
+                      backgroundColor: RatnexColors.panel,
+                      side: BorderSide(color: RatnexColors.hairline),
+                      showCheckmark: false,
+                    );
+                  }).toList(),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: CalcTextField(
+                      controller: _gross,
+                      label: 'Gross weight',
+                      suffix: 'g',
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: CalcTextField(
+                      controller: _net,
+                      label: 'Net weight',
+                      suffix: 'g',
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: CalcTextField(
+                      controller: _rate,
+                      label: 'Rate',
+                      prefix: '₹ ',
+                      suffix: '/g',
+                      allowDecimal: false,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: CalcTextField(
+                      controller: _deduction,
+                      label: 'Deduction',
+                      suffix: '%',
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: RatnexColors.goldSoft,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Column(
+                  children: [
+                    _exchangeRow(
+                      'Metal value',
+                      RatnexFormat.money(draft.grossValue),
+                    ),
+                    const SizedBox(height: 6),
+                    _exchangeRow(
+                      'Deduction (${draft.deductionPercent.toStringAsFixed(1)}%)',
+                      '− ${RatnexFormat.money(draft.deduction)}',
+                    ),
+                    const SizedBox(height: 8),
+                    Divider(
+                      height: 1,
+                      color: RatnexColors.gold.withValues(alpha: 0.3),
+                    ),
+                    const SizedBox(height: 8),
+                    _exchangeRow(
+                      'Credit to customer',
+                      RatnexFormat.money(draft.value),
+                      bold: true,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              FilledButton(
+                onPressed: () {
+                  if (draft.netWeight <= 0 || draft.ratePerGram <= 0) {
+                    RatnexSnack.error(context, 'Enter a net weight and rate');
+                    return;
+                  }
+                  Navigator.of(context).pop(draft);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: RatnexColors.ink,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(
+                  widget.existing == null ? 'Add exchange' : 'Save changes',
+                  style: RatnexTheme.label(
+                    size: 13.5,
+                    weight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _exchangeRow(String label, String value, {bool bold = false}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: RatnexTheme.label(
+              size: 12.5,
+              weight: bold ? FontWeight.w700 : FontWeight.w500,
+              color: bold ? RatnexColors.ink : null,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: RatnexTheme.money(size: bold ? 16 : 13.5),
+        ),
+      ],
     );
   }
 }

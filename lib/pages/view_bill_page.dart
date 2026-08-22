@@ -4,7 +4,11 @@ import 'package:intl/intl.dart';
 
 import '../services/bill_pdf_service.dart';
 import '../services/shop_bills_service.dart';
+import '../services/shop_profile_service.dart';
+import '../services/whatsapp_service.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
+import '../widgets/ratnex_ui.dart';
 import 'create_bill_page.dart';
 
 class ViewBillPage extends StatefulWidget {
@@ -20,11 +24,36 @@ class _ViewBillPageState extends State<ViewBillPage> {
   late ShopBill bill;
   bool _customerDetails = false;
   final Set<int> _expandedItems = {};
+  ShopProfile? _shop;
+
+  Future<void> _whatsapp() async {
+    final message = WhatsAppService.billMessage(
+      shopName: _shop?.shopName ?? 'our shop',
+      customerName: bill.customer.name,
+      billNo: bill.billNo,
+      amount: bill.totals.grandTotal,
+      balance: bill.totals.balance,
+      upiId: _shop?.upiId,
+    );
+    final ok = await WhatsAppService.send(bill.customer.phone, message);
+    if (!mounted || ok) return;
+    if (bill.customer.phone == null || bill.customer.phone!.trim().isEmpty) {
+      RatnexSnack.error(context, 'This bill has no customer phone number');
+      return;
+    }
+    await WhatsAppService.copy(message);
+    if (mounted) {
+      RatnexSnack.show(context, 'WhatsApp unavailable — message copied');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     bill = widget.bill;
+    ShopProfileService().watchProfile().first.then((p) {
+      if (mounted) setState(() => _shop = p);
+    }).catchError((_) {});
     final c = bill.customer;
     _customerDetails = (c.phone?.isNotEmpty ?? false) ||
         (c.address?.isNotEmpty ?? false) ||
@@ -251,7 +280,7 @@ class _ViewBillPageState extends State<ViewBillPage> {
                         const SizedBox(height: 8),
                         for (var i = 0; i < bill.items.length; i++) ...[
                           if (i > 0)
-                            const Divider(color: RatnexColors.hairline),
+                            Divider(color: RatnexColors.hairline),
                           _ViewItemRow(
                             item: bill.items[i],
                             currency: currency,
@@ -279,12 +308,23 @@ class _ViewBillPageState extends State<ViewBillPage> {
                           currency.format(bill.totals.taxable.round()),
                         ),
                         _row('GST', currency.format(bill.totals.gst.round())),
-                        const Divider(color: RatnexColors.hairline),
+                        Divider(color: RatnexColors.hairline),
                         _row(
                           'Grand total',
                           currency.format(bill.totals.grandTotal.round()),
                           bold: true,
                         ),
+                        if (bill.totals.hasExchange) ...[
+                          _row(
+                            'Old gold credit',
+                            '− ${currency.format(bill.totals.exchangeValue.round())}',
+                          ),
+                          _row(
+                            'Net payable',
+                            currency.format(bill.totals.netPayable.round()),
+                            bold: true,
+                          ),
+                        ],
                         _row(
                           'Paid',
                           currency.format(bill.totals.paidAmount.round()),
@@ -294,9 +334,75 @@ class _ViewBillPageState extends State<ViewBillPage> {
                           currency.format(bill.totals.balance.round()),
                           bold: true,
                         ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            RatnexFormat.amountInWords(bill.totals.netPayable),
+                            style: RatnexTheme.label(
+                              size: 11.5,
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                  if (bill.exchange.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _panel(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'OLD GOLD TAKEN IN',
+                            style: RatnexTheme.label(
+                              size: 10.5,
+                              weight: FontWeight.w700,
+                            ).copyWith(letterSpacing: 0.5),
+                          ),
+                          const SizedBox(height: 10),
+                          for (final e in bill.exchange)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          e.name,
+                                          style: RatnexTheme.label(
+                                            size: 13,
+                                            weight: FontWeight.w600,
+                                            color: RatnexColors.ink,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${RatnexFormat.grams(e.netWeight)} @ ${currency.format(e.ratePerGram.round())}/g'
+                                          '${e.deductionPercent > 0 ? ' · less ${e.deductionPercent.toStringAsFixed(1)}%' : ''}',
+                                          style: RatnexTheme.label(size: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    currency.format(e.value.round()),
+                                    style: RatnexTheme.money(
+                                      size: 13,
+                                      color: RatnexColors.up,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                   if (bill.notes != null && bill.notes!.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _panel(
@@ -353,28 +459,49 @@ class _ViewBillPageState extends State<ViewBillPage> {
                     ),
                   ],
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showPrintSheet(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: RatnexColors.ink,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showPrintSheet(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: RatnexColors.ink,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(Icons.print_outlined, size: 18),
+                            label: Text(
+                              'Print / Share',
+                              style: RatnexTheme.label(
+                                size: 14,
+                                weight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      icon: const Icon(Icons.print_outlined, size: 18),
-                      label: Text(
-                        'Print / Share',
-                        style: RatnexTheme.label(
-                          size: 14,
-                          weight: FontWeight.w700,
-                          color: Colors.white,
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _whatsapp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                          ),
+                          child: const Icon(Icons.chat_outlined, size: 20),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

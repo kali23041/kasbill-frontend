@@ -199,6 +199,66 @@ class BillLineItem {
       };
 }
 
+/// Old gold handed in against a purchase.
+///
+/// Kept separate from the sale itself: [BillTotals.grandTotal] stays the full
+/// taxable sale (which is what GST and the reports need), and the exchange is
+/// applied afterwards to arrive at what the customer actually pays.
+class BillExchangeItem {
+  final String name;
+  final String? metalLabel;
+  final int? karat;
+  final double grossWeight;
+  final double netWeight;
+  final double ratePerGram;
+  final double deductionPercent;
+
+  const BillExchangeItem({
+    required this.name,
+    this.metalLabel,
+    this.karat,
+    required this.grossWeight,
+    required this.netWeight,
+    required this.ratePerGram,
+    this.deductionPercent = 0,
+  });
+
+  /// Metal value before the shop's melting/refining deduction.
+  double get grossValue => netWeight * ratePerGram;
+
+  double get deduction => grossValue * (deductionPercent.clamp(0, 100) / 100);
+
+  /// What the customer is credited for this piece.
+  double get value =>
+      (grossValue - deduction).clamp(0, double.infinity).toDouble();
+
+  factory BillExchangeItem.fromMap(Map<String, dynamic> m) {
+    return BillExchangeItem(
+      name: (m['name'] as String?)?.trim() ?? '',
+      metalLabel: m['metalLabel'] as String?,
+      karat: (m['karat'] as num?)?.toInt(),
+      grossWeight: (m['grossWeight'] as num?)?.toDouble() ?? 0,
+      netWeight: (m['netWeight'] as num?)?.toDouble() ?? 0,
+      ratePerGram: (m['ratePerGram'] as num?)?.toDouble() ?? 0,
+      deductionPercent: (m['deductionPercent'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'name': name.trim(),
+        'metalLabel': metalLabel,
+        'karat': karat,
+        'grossWeight': grossWeight,
+        'netWeight': netWeight,
+        'ratePerGram': ratePerGram,
+        'deductionPercent': deductionPercent,
+        'value': value,
+      };
+
+  static double totalOf(List<BillExchangeItem> items) =>
+      items.fold<double>(0, (s, e) => s + e.value);
+}
+
 class BillPayment {
   final double amount;
   final String mode;
@@ -238,28 +298,43 @@ class BillTotals {
   final double paidAmount;
   final double balance;
 
+  /// Credit given for old gold taken in against this sale. Zero on every bill
+  /// written before exchanges existed, so nothing about older bills changes.
+  final double exchangeValue;
+
   const BillTotals({
     required this.taxable,
     required this.gst,
     required this.grandTotal,
     required this.paidAmount,
     required this.balance,
+    this.exchangeValue = 0,
   });
+
+  /// What the customer actually hands over after the exchange credit.
+  double get netPayable =>
+      (grandTotal - exchangeValue).clamp(0, double.infinity).toDouble();
+
+  bool get hasExchange => exchangeValue > 0.5;
 
   factory BillTotals.fromItems({
     required List<BillLineItem> items,
     required double paidAmount,
+    double exchangeValue = 0,
   }) {
     final taxable = items.fold<double>(0, (s, i) => s + i.taxableAmount);
     final gst = items.fold<double>(0, (s, i) => s + i.gstAmount);
     final grand = taxable + gst;
+    final exchange = exchangeValue.clamp(0, double.infinity).toDouble();
+    final payable = (grand - exchange).clamp(0, double.infinity).toDouble();
     final paid = paidAmount.clamp(0, double.infinity).toDouble();
     return BillTotals(
       taxable: taxable,
       gst: gst,
       grandTotal: grand,
+      exchangeValue: exchange,
       paidAmount: paid,
-      balance: (grand - paid).clamp(0, double.infinity).toDouble(),
+      balance: (payable - paid).clamp(0, double.infinity).toDouble(),
     );
   }
 
@@ -269,6 +344,7 @@ class BillTotals {
       taxable: (m['taxable'] as num?)?.toDouble() ?? 0,
       gst: (m['gst'] as num?)?.toDouble() ?? 0,
       grandTotal: (m['grandTotal'] as num?)?.toDouble() ?? 0,
+      exchangeValue: (m['exchangeValue'] as num?)?.toDouble() ?? 0,
       paidAmount: (m['paidAmount'] as num?)?.toDouble() ?? 0,
       balance: (m['balance'] as num?)?.toDouble() ?? 0,
     );
@@ -278,6 +354,8 @@ class BillTotals {
         'taxable': taxable,
         'gst': gst,
         'grandTotal': grandTotal,
+        'exchangeValue': exchangeValue,
+        'netPayable': netPayable,
         'paidAmount': paidAmount,
         'balance': balance,
       };
@@ -339,6 +417,7 @@ class ShopBill {
   final String billNo;
   final BillCustomer customer;
   final List<BillLineItem> items;
+  final List<BillExchangeItem> exchange;
   final BillTotals totals;
   final String paymentStatus; // unpaid | partial | paid | cancelled
   final String? paymentMode; // cash | online | upi | card | mixed
@@ -353,6 +432,7 @@ class ShopBill {
     required this.billNo,
     required this.customer,
     required this.items,
+    this.exchange = const [],
     required this.totals,
     required this.paymentStatus,
     this.paymentMode,
@@ -391,6 +471,7 @@ class ShopBill {
   factory ShopBill.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data() ?? {};
     final itemsRaw = (d['items'] as List?) ?? const [];
+    final exchangeRaw = (d['exchange'] as List?) ?? const [];
     final paymentsRaw = (d['payments'] as List?) ?? const [];
     return ShopBill(
       billNo: (d['billNo'] as String?) ?? doc.id,
@@ -398,6 +479,10 @@ class ShopBill {
       items: itemsRaw
           .whereType<Map>()
           .map((e) => BillLineItem.fromMap(Map<String, dynamic>.from(e)))
+          .toList(),
+      exchange: exchangeRaw
+          .whereType<Map>()
+          .map((e) => BillExchangeItem.fromMap(Map<String, dynamic>.from(e)))
           .toList(),
       totals: BillTotals.fromMap(d['totals'] as Map<String, dynamic>?),
       paymentStatus: (d['paymentStatus'] as String?) ?? 'unpaid',
@@ -420,6 +505,7 @@ class ShopBill {
       'billNo': billNo,
       'customer': customer.toMap(),
       'items': items.map((e) => e.toMap()).toList(),
+      'exchange': exchange.map((e) => e.toMap()).toList(),
       'totals': totals.toMap(),
       'paymentStatus': paymentStatus,
       'paymentMode': paymentMode,
@@ -491,6 +577,7 @@ class ShopBillsService {
       billNo: billNo,
       customer: draft.customer,
       items: draft.items,
+      exchange: draft.exchange,
       totals: draft.totals,
       paymentStatus: draft.paymentStatus,
       paymentMode: draft.paymentMode,

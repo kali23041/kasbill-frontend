@@ -5,11 +5,38 @@ import '../components/ratnex_page_scaffold.dart';
 import '../services/shop_girvi_service.dart';
 import '../services/stock_image_helper.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
+import '../widgets/ratnex_ui.dart';
 import 'create_girvi_page.dart';
 import 'view_girvi_page.dart';
 
-class GirviPage extends StatelessWidget {
+class GirviPage extends StatefulWidget {
   const GirviPage({super.key});
+
+  @override
+  State<GirviPage> createState() => _GirviPageState();
+}
+
+class _GirviPageState extends State<GirviPage> {
+  final _search = TextEditingController();
+  String _query = '';
+  String _filter = 'open';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  bool _matches(ShopGirvi g) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    final digits = q.replaceAll(RegExp(r'\D'), '');
+    return g.girviNo.toLowerCase().contains(q) ||
+        g.customer.name.toLowerCase().contains(q) ||
+        (digits.isNotEmpty && (g.customer.phone ?? '').contains(digits)) ||
+        g.items.any((i) => i.name.toLowerCase().contains(q));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +51,32 @@ class GirviPage extends StatelessWidget {
       stream: service.watchGirvi(),
       builder: (context, snap) {
         final list = snap.data ?? const <ShopGirvi>[];
-        final active = list.where((g) => g.effectiveStatus == 'active').length;
-        final overdue =
-            list.where((g) => g.effectiveStatus == 'overdue').length;
+        final activeList =
+            list.where((g) => g.effectiveStatus == 'active').toList();
+        final overdueList =
+            list.where((g) => g.effectiveStatus == 'overdue').toList();
+        final closedList = list.where((g) => g.status == 'closed').toList();
+        final active = activeList.length;
+        final overdue = overdueList.length;
+
+        final openList = [...overdueList, ...activeList];
+        final principalOut =
+            openList.fold<double>(0, (s, g) => s + g.totals.balance);
+        final dueSoon = activeList
+            .where(
+              (g) =>
+                  g.dueDate.difference(DateTime.now()).inDays <= 7 &&
+                  g.dueDate.isAfter(DateTime.now()),
+            )
+            .length;
+
+        var visible = switch (_filter) {
+          'overdue' => overdueList,
+          'closed' => closedList,
+          'all' => list,
+          _ => openList,
+        };
+        visible = visible.where(_matches).toList();
 
         return RatnexPageScaffold(
           title: 'Girvi',
@@ -50,6 +100,58 @@ class GirviPage extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'Money out',
+                      value: RatnexFormat.compact(principalOut),
+                      caption: '${openList.length} open pledges',
+                      icon: Icons.account_balance_outlined,
+                      accent: RatnexColors.violet,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'Overdue',
+                      value: '$overdue',
+                      caption: overdue == 0 ? 'All on time' : 'Chase these',
+                      icon: Icons.error_outline,
+                      accent:
+                          overdue == 0 ? RatnexColors.up : RatnexColors.down,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'Due in 7d',
+                      value: '$dueSoon',
+                      caption: 'coming up',
+                      icon: Icons.schedule,
+                      accent: RatnexColors.warn,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              RatnexSearchField(
+                hint: 'Search girvi no, customer or item',
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+              ),
+              const SizedBox(height: 10),
+              RatnexFilterChips(
+                selected: _filter,
+                options: [
+                  (value: 'open', label: 'Open', count: openList.length),
+                  (value: 'overdue', label: 'Overdue', count: overdue),
+                  (value: 'closed', label: 'Closed', count: closedList.length),
+                  (value: 'all', label: 'All', count: list.length),
+                ],
+                onSelected: (v) => setState(() => _filter = v),
+              ),
+              const SizedBox(height: 14),
               const RatnexSectionLabel(text: 'All pledges'),
               const SizedBox(height: 8),
               if (snap.hasError)
@@ -63,59 +165,48 @@ class GirviPage extends StatelessWidget {
                   ),
                 )
               else if (!snap.hasData)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(
-                    child: CircularProgressIndicator(color: RatnexColors.gold),
+                const RatnexListSkeleton()
+              else if (list.isEmpty)
+                RatnexEmptyState(
+                  icon: Icons.account_balance_outlined,
+                  title: 'No girvi yet',
+                  message:
+                      'Record a gold loan and Ratnex tracks the interest, the due date and reminds you before it lapses.',
+                  actionLabel: 'New girvi',
+                  onAction: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CreateGirviPage()),
                   ),
                 )
-              else if (list.isEmpty)
-                RatnexPanel(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.account_balance_outlined,
-                          size: 32,
-                          color: RatnexColors.gold,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No girvi yet',
-                          style: RatnexTheme.label(
-                            size: 15,
-                            weight: FontWeight.w700,
-                            color: RatnexColors.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Record a gold loan from New Girvi.',
-                          style: RatnexTheme.label(size: 13),
-                        ),
-                      ],
-                    ),
-                  ),
+              else if (visible.isEmpty)
+                RatnexEmptyState(
+                  icon: _filter == 'overdue'
+                      ? Icons.check_circle_outline
+                      : Icons.search_off,
+                  title: _filter == 'overdue'
+                      ? 'Nothing is overdue'
+                      : 'Nothing matches',
+                  message: _filter == 'overdue'
+                      ? 'Every open pledge is still inside its due date.'
+                      : 'Try a different girvi number, name or filter.',
                 )
               else
                 RatnexPanel(
                   child: Column(
                     children: [
-                      for (var i = 0; i < list.length; i++) ...[
+                      for (var i = 0; i < visible.length; i++) ...[
                         if (i > 0)
-                          const Divider(
+                          Divider(
                             height: 1,
                             color: RatnexColors.hairline,
                           ),
                         _GirviRow(
-                          girvi: list[i],
+                          girvi: visible[i],
                           currency: currency,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    ViewGirviPage(girvi: list[i]),
+                                    ViewGirviPage(girvi: visible[i]),
                               ),
                             );
                           },
@@ -177,7 +268,7 @@ class _GirviRow extends StatelessWidget {
                     ? Image.memory(thumb, fit: BoxFit.cover)
                     : Container(
                         color: RatnexColors.goldSoft,
-                        child: const Icon(
+                        child: Icon(
                           Icons.diamond_outlined,
                           color: RatnexColors.gold,
                           size: 22,

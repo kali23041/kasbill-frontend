@@ -179,7 +179,7 @@ class _GirviSavedPageState extends State<GirviSavedPage>
                             'Due',
                             DateFormat('d MMM yyyy').format(girvi.dueDate),
                           ),
-                          const Divider(color: RatnexColors.hairline),
+                          Divider(color: RatnexColors.hairline),
                           _row(
                             'Amount due',
                             currency.format(girvi.totals.amountDue.round()),
@@ -259,7 +259,7 @@ class _GirviSavedPageState extends State<GirviSavedPage>
                                       ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: RatnexColors.ink,
-                                side: const BorderSide(
+                                side: BorderSide(
                                   color: RatnexColors.hairline,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -387,7 +387,7 @@ class _GirviSavedPageState extends State<GirviSavedPage>
               ),
             ),
             subtitle: Text(subtitle, style: RatnexTheme.label(size: 11)),
-            trailing: const Icon(Icons.chevron_right, color: RatnexColors.muted),
+            trailing: Icon(Icons.chevron_right, color: RatnexColors.muted),
           ),
         ),
       ),

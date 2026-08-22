@@ -46,9 +46,18 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Ratnex needs camera access to photograph stock items.</string>
+	<string>Ratnex needs camera access to photograph stock items and to scan barcodes on tags.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Ratnex needs photo library access to attach stock item images.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Ratnex uses Face ID to unlock your shop data.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>tel</string>
+		<string>sms</string>
+		<string>https</string>
+	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

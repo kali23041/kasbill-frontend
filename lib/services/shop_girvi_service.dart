@@ -228,10 +228,19 @@ class ShopGirvi {
   final GirviTotals totals;
   final List<GirviPayment> payments;
   final String disbursementMode; // cash | upi | bank | other
+
+  /// KYC on the borrower. Pawn lending is regulated, so the shop should be
+  /// able to show who it lent against. Null on loans written before this.
+  final String? idProofType; // aadhaar | pan | voter | driving | passport
+  final String? idProofNumber;
   final String? notes;
   final BillShopSnapshot shopSnapshot;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  bool get hasKyc =>
+      (idProofType?.trim().isNotEmpty ?? false) &&
+      (idProofNumber?.trim().isNotEmpty ?? false);
 
   const ShopGirvi({
     required this.girviNo,
@@ -246,6 +255,8 @@ class ShopGirvi {
     required this.totals,
     this.payments = const [],
     this.disbursementMode = 'cash',
+    this.idProofType,
+    this.idProofNumber,
     this.notes,
     required this.shopSnapshot,
     this.createdAt,
@@ -315,6 +326,8 @@ class ShopGirvi {
           .map((e) => GirviPayment.fromMap(Map<String, dynamic>.from(e)))
           .toList(),
       disbursementMode: (d['disbursementMode'] as String?) ?? 'cash',
+      idProofType: d['idProofType'] as String?,
+      idProofNumber: d['idProofNumber'] as String?,
       notes: d['notes'] as String?,
       shopSnapshot:
           BillShopSnapshot.fromMap(d['shopSnapshot'] as Map<String, dynamic>?),
@@ -337,6 +350,8 @@ class ShopGirvi {
       'totals': totals.toMap(),
       'payments': payments.map((e) => e.toMap()).toList(),
       'disbursementMode': disbursementMode,
+      'idProofType': idProofType,
+      'idProofNumber': idProofNumber?.trim(),
       'notes': notes,
       'shopSnapshot': shopSnapshot.toMap(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -412,6 +427,8 @@ class ShopGirviService {
       totals: draft.totals,
       payments: draft.payments,
       disbursementMode: draft.disbursementMode,
+      idProofType: draft.idProofType,
+      idProofNumber: draft.idProofNumber,
       notes: draft.notes,
       shopSnapshot: draft.shopSnapshot,
     );
@@ -464,6 +481,8 @@ class ShopGirviService {
         totals: totals,
         payments: payments,
         disbursementMode: existing.disbursementMode,
+        idProofType: existing.idProofType,
+        idProofNumber: existing.idProofNumber,
         notes: existing.notes,
         shopSnapshot: existing.shopSnapshot,
         createdAt: existing.createdAt,

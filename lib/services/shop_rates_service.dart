@@ -174,6 +174,41 @@ class ShopRatesService {
     return ShopMetalRate.fromDoc(snap);
   }
 
+  /// Movement in a metal's shop rate since the previous recorded day.
+  ///
+  /// Shops think in rupees per gram, not percentages, so this returns the
+  /// rupee change alongside the percentage.
+  Future<({double change, double percent, DateTime? since})?> rateDelta(
+    String metalId,
+    double currentRate,
+  ) async {
+    final col = _history(metalId);
+    if (col == null) return null;
+    try {
+      final snap =
+          await col.orderBy('date', descending: true).limit(5).get();
+      final points = snap.docs.map(MetalRatePoint.fromDoc).toList();
+      final today = DateTime.now();
+      // Skip any snapshot written today — we want the previous close.
+      for (final p in points) {
+        final sameDay = p.date.year == today.year &&
+            p.date.month == today.month &&
+            p.date.day == today.day;
+        if (sameDay) continue;
+        if (p.shopRatePerGram <= 0) continue;
+        final change = currentRate - p.shopRatePerGram;
+        return (
+          change: change,
+          percent: (change / p.shopRatePerGram) * 100,
+          since: p.date,
+        );
+      }
+    } catch (_) {
+      // History is a nice-to-have; never surface an error for it.
+    }
+    return null;
+  }
+
   /// Last ~90 days of shop-rate snapshots, ascending by date.
   Stream<List<MetalRatePoint>> watchHistory(String metalId) {
     final col = _history(metalId);

@@ -159,7 +159,7 @@ class _SignupPageState extends State<SignupPage> {
             const SizedBox(height: 12),
             AuthPillButton(
               label: 'Continue with email',
-              leading: const Icon(
+              leading: Icon(
                 Icons.mail_outline,
                 size: 20,
                 color: RatnexColors.ink,

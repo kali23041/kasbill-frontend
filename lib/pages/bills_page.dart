@@ -4,57 +4,227 @@ import 'package:intl/intl.dart';
 import '../components/ratnex_page_scaffold.dart';
 import '../services/shop_bills_service.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
+import '../widgets/barcode_scan_sheet.dart';
+import '../widgets/ratnex_ui.dart';
 import 'create_bill_page.dart';
 import 'view_bill_page.dart';
 
-class BillsPage extends StatelessWidget {
+class BillsPage extends StatefulWidget {
   const BillsPage({super.key});
+
+  @override
+  State<BillsPage> createState() => _BillsPageState();
+}
+
+class _BillsPageState extends State<BillsPage> {
+  final _billsService = ShopBillsService();
+  final _search = TextEditingController();
+
+  String _query = '';
+  String _filter = 'all';
+  String _period = 'all';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  bool _inPeriod(ShopBill b) {
+    final d = b.billedAt ?? b.createdAt;
+    if (d == null) return _period == 'all';
+    final now = DateTime.now();
+    switch (_period) {
+      case 'today':
+        return d.year == now.year && d.month == now.month && d.day == now.day;
+      case 'week':
+        final monday = DateTime(now.year, now.month, now.day)
+            .subtract(Duration(days: now.weekday - 1));
+        return !d.isBefore(monday);
+      case 'month':
+        return d.year == now.year && d.month == now.month;
+      default:
+        return true;
+    }
+  }
+
+  bool _matches(ShopBill b) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    final digits = q.replaceAll(RegExp(r'\D'), '');
+    return b.billNo.toLowerCase().contains(q) ||
+        b.customer.name.toLowerCase().contains(q) ||
+        (digits.isNotEmpty && (b.customer.phone ?? '').contains(digits)) ||
+        b.items.any(
+          (i) =>
+              i.name.toLowerCase().contains(q) ||
+              (i.barcode ?? '').toLowerCase().contains(q),
+        );
+  }
+
+  Future<void> _scan() async {
+    final code = await showBarcodeScanner(
+      context,
+      title: 'Find a bill',
+      hint: 'Scan the barcode printed on a tag or bill',
+    );
+    if (code == null || !mounted) return;
+    setState(() {
+      _search.text = code;
+      _query = code;
+      _filter = 'all';
+      _period = 'all';
+    });
+  }
+
+  Future<void> _repeatLast(List<ShopBill> bills) async {
+    if (bills.isEmpty) return;
+    final last = bills.first;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => CreateBillPage(duplicateOf: last)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final today = DateFormat('d MMM yyyy').format(DateTime.now());
-    final currency = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
-    final billsService = ShopBillsService();
 
     return StreamBuilder<List<ShopBill>>(
-      stream: billsService.watchBills(),
+      stream: _billsService.watchBills(),
       builder: (context, snap) {
         final bills = snap.data ?? const <ShopBill>[];
-        final todayCount = bills.where((b) {
+        final now = DateTime.now();
+        final todayBills = bills.where((b) {
           final d = b.billedAt ?? b.createdAt;
           if (d == null) return false;
-          final now = DateTime.now();
           return d.year == now.year && d.month == now.month && d.day == now.day;
-        }).length;
+        }).toList();
+
+        final periodBills = bills.where(_inPeriod).toList();
+        final unpaid = periodBills
+            .where((b) => b.paymentStatus == 'unpaid')
+            .toList();
+        final partial = periodBills
+            .where((b) => b.paymentStatus == 'partial')
+            .toList();
+        final paid =
+            periodBills.where((b) => b.paymentStatus == 'paid').toList();
+
+        var visible = switch (_filter) {
+          'unpaid' => unpaid,
+          'partial' => partial,
+          'paid' => paid,
+          _ => periodBills,
+        };
+        visible = visible.where(_matches).toList();
+
+        final todayTotal = todayBills
+            .where((b) => b.paymentStatus != 'cancelled')
+            .fold<double>(0, (s, b) => s + b.totals.grandTotal);
+        final pendingTotal = [...unpaid, ...partial]
+            .fold<double>(0, (s, b) => s + b.totals.balance);
 
         return RatnexPageScaffold(
           title: 'Bills',
           subtitle: 'Invoices  ·  $today',
           trailing: RatnexHeaderChip(
-            label: '$todayCount today',
+            label: '${todayBills.length} today',
             color: RatnexColors.gold,
           ),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: "Today's sales",
+                      value: RatnexFormat.compact(todayTotal),
+                      caption: '${todayBills.length} bills',
+                      icon: Icons.today_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'Pending',
+                      value: RatnexFormat.compact(pendingTotal),
+                      caption: '${unpaid.length + partial.length} bills',
+                      icon: Icons.hourglass_bottom,
+                      accent: pendingTotal > 0
+                          ? RatnexColors.down
+                          : RatnexColors.up,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RatnexStatTile(
+                      label: 'All bills',
+                      value: '${bills.length}',
+                      caption: '${paid.length} settled',
+                      icon: Icons.receipt_long_outlined,
+                      accent: RatnexColors.info,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
               RatnexPrimaryButton(
                 label: 'New Bill',
                 icon: Icons.add,
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const CreateBillPage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const CreateBillPage()),
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              const RatnexSectionLabel(text: 'All invoices'),
+              if (bills.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _repeatLast(bills),
+                  icon: const Icon(Icons.replay, size: 17),
+                  label: Text(
+                    'Repeat last bill · ${bills.first.customer.name}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: RatnexColors.ink,
+                    side: BorderSide(color: RatnexColors.hairline),
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              RatnexSearchField(
+                hint: 'Search bill no, customer or phone',
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+                onScan: _scan,
+              ),
+              const SizedBox(height: 10),
+              RatnexFilterChips(
+                selected: _period,
+                options: const [
+                  (value: 'all', label: 'All time', count: null),
+                  (value: 'today', label: 'Today', count: null),
+                  (value: 'week', label: 'This week', count: null),
+                  (value: 'month', label: 'This month', count: null),
+                ],
+                onSelected: (v) => setState(() => _period = v),
+              ),
               const SizedBox(height: 8),
+              RatnexFilterChips(
+                selected: _filter,
+                options: [
+                  (value: 'all', label: 'All', count: periodBills.length),
+                  (value: 'unpaid', label: 'Unpaid', count: unpaid.length),
+                  (value: 'partial', label: 'Partial', count: partial.length),
+                  (value: 'paid', label: 'Paid', count: paid.length),
+                ],
+                onSelected: (v) => setState(() => _filter = v),
+              ),
+              const SizedBox(height: 14),
               if (snap.hasError)
                 RatnexPanel(
                   child: Padding(
@@ -66,40 +236,33 @@ class BillsPage extends StatelessWidget {
                   ),
                 )
               else if (!snap.hasData)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(
-                    child: CircularProgressIndicator(color: RatnexColors.gold),
+                const RatnexListSkeleton()
+              else if (bills.isEmpty)
+                RatnexEmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'No bills yet',
+                  message:
+                      'Make your first bill and it will show up here, along with the customer, their khata and your reports.',
+                  actionLabel: 'Create a bill',
+                  onAction: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CreateBillPage()),
                   ),
                 )
-              else if (bills.isEmpty)
-                RatnexPanel(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.receipt_long_outlined,
-                          size: 32,
-                          color: RatnexColors.gold,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No bills yet',
-                          style: RatnexTheme.label(
-                            size: 15,
-                            weight: FontWeight.w700,
-                            color: RatnexColors.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Create your first bill from New Bill.',
-                          style: RatnexTheme.label(size: 13),
-                        ),
-                      ],
-                    ),
-                  ),
+              else if (visible.isEmpty)
+                RatnexEmptyState(
+                  icon: Icons.search_off,
+                  title: 'Nothing matches',
+                  message:
+                      'Try a different bill number, customer name or filter.',
+                  actionLabel: 'Clear filters',
+                  onAction: () {
+                    _search.clear();
+                    setState(() {
+                      _query = '';
+                      _filter = 'all';
+                      _period = 'all';
+                    });
+                  },
                 )
               else
                 RatnexPanel(
@@ -154,13 +317,13 @@ class BillsPage extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const Divider(height: 1, color: RatnexColors.hairline),
-                      ...List.generate(bills.length, (index) {
-                        final bill = bills[index];
+                      Divider(height: 1, color: RatnexColors.hairline),
+                      ...List.generate(visible.length, (index) {
+                        final bill = visible[index];
                         final time = bill.billedAt ?? bill.createdAt;
                         final timeStr = time == null
                             ? '—'
-                            : DateFormat('h:mm a').format(time);
+                            : DateFormat('d MMM · h:mm a').format(time);
 
                         return Column(
                           children: [
@@ -172,6 +335,12 @@ class BillsPage extends StatelessWidget {
                                   ),
                                 );
                               },
+                              onLongPress: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      CreateBillPage(duplicateOf: bill),
+                                ),
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -239,29 +408,27 @@ class BillsPage extends StatelessWidget {
                                         style: RatnexTheme.label(
                                           size: 11,
                                           weight: FontWeight.w700,
-                                          color: _statusColor(bill.paymentStatus),
+                                          color:
+                                              _statusColor(bill.paymentStatus),
                                         ),
                                       ),
                                     ),
                                     Expanded(
                                       flex: 2,
                                       child: Text(
-                                        currency.format(
-                                          bill.totals.grandTotal.round(),
+                                        RatnexFormat.money(
+                                          bill.totals.grandTotal,
                                         ),
                                         textAlign: TextAlign.right,
-                                        style: RatnexTheme.money(
-                                          size: 12,
-                                          color: RatnexColors.ink,
-                                        ),
+                                        style: RatnexTheme.money(size: 12),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                            if (index != bills.length - 1)
-                              const Divider(
+                            if (index != visible.length - 1)
+                              Divider(
                                 height: 1,
                                 indent: 12,
                                 endIndent: 12,

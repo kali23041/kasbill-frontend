@@ -7,15 +7,27 @@ import '../admin/services/admin_users_service.dart';
 import '../auth/auth_helpers.dart';
 import '../auth/signin_page.dart';
 import '../components/ratnex_page_scaffold.dart';
+import '../karigar/karigar_page.dart';
+import '../ledger/udhaar_page.dart';
 import '../pages/categories_page.dart';
+import '../pages/customers_page.dart';
 import '../pages/edit_shop_details_page.dart';
 import '../pages/gst_page.dart';
 import '../pages/metals_diamonds_page.dart';
 import '../pages/plans_page.dart';
+import '../pages/reminders_page.dart';
+import '../pages/reports_page.dart';
+import '../repairs/repairs_page.dart';
+import '../schemes/schemes_page.dart';
+import '../services/notifications_service.dart';
+import '../services/shop_ledger_service.dart';
 import '../services/shop_plan_service.dart';
 import '../services/shop_profile_service.dart';
 import '../services/stock_image_helper.dart';
+import '../settings/settings_page.dart';
+import '../staff/staff_page.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -26,6 +38,16 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _isLoggingOut = false;
+
+  /// Detach this device's push token before signing out, so a shared phone
+  /// stops receiving the previous shop's reminders.
+  Future<void> _detachPush() async {
+    try {
+      await NotificationsService.instance.detachToken();
+    } catch (_) {
+      // Never block sign-out on this.
+    }
+  }
 
   Future<void> _handleLogout() async {
     final shouldLogout = await showDialog<bool>(
@@ -72,6 +94,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isLoggingOut = true);
 
     try {
+      await _detachPush();
       await AuthHelpers.signOut();
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
@@ -140,7 +163,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     user!.photoURL!,
                                     fit: BoxFit.cover,
                                   )
-                                : const Icon(
+                                : Icon(
                                     Icons.storefront_outlined,
                                     color: RatnexColors.gold,
                                     size: 28,
@@ -241,6 +264,91 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 16),
+              const RatnexSectionLabel(text: 'Business'),
+              const SizedBox(height: 8),
+              RatnexPanel(
+                child: Column(
+                  children: [
+                    _ProfileRow(
+                      icon: Icons.people_outline,
+                      title: 'Customers',
+                      subtitle: 'Everyone who has bought from you',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const CustomersPage(),
+                        ),
+                      ),
+                    ),
+                    _profileDivider(),
+                    StreamBuilder<List<UdhaarAccount>>(
+                      stream: ShopLedgerService().watchAccounts(),
+                      builder: (context, snap) {
+                        final accounts = snap.data ?? const <UdhaarAccount>[];
+                        final total =
+                            ShopLedgerService.totalOutstanding(accounts);
+                        return _ProfileRow(
+                          icon: Icons.account_balance_wallet_outlined,
+                          title: 'Udhaar',
+                          subtitle: total <= 0.5
+                              ? 'Nothing pending'
+                              : '${RatnexFormat.money(total)} outstanding',
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const UdhaarPage(),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    _profileDivider(),
+                    _ProfileRow(
+                      icon: Icons.savings_outlined,
+                      title: 'Savings schemes',
+                      subtitle: 'Monthly gold plans',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SchemesPage()),
+                      ),
+                    ),
+                    _profileDivider(),
+                    _ProfileRow(
+                      icon: Icons.build_outlined,
+                      title: 'Repairs & orders',
+                      subtitle: 'Job cards with token numbers',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const RepairsPage()),
+                      ),
+                    ),
+                    _profileDivider(),
+                    _ProfileRow(
+                      icon: Icons.handyman_outlined,
+                      title: 'Karigar',
+                      subtitle: 'Metal issued to goldsmiths',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const KarigarPage()),
+                      ),
+                    ),
+                    _profileDivider(),
+                    _ProfileRow(
+                      icon: Icons.insights_outlined,
+                      title: 'Reports',
+                      subtitle: 'Margin, dead stock, busiest hours',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ReportsPage()),
+                      ),
+                    ),
+                    _profileDivider(),
+                    _ProfileRow(
+                      icon: Icons.groups_outlined,
+                      title: 'Staff',
+                      subtitle: 'Who can use this account',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const StaffPage()),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               const RatnexSectionLabel(text: 'Account'),
               const SizedBox(height: 8),
               RatnexPanel(
@@ -277,7 +385,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         }
                         return Column(
                           children: [
-                            const Divider(
+                            Divider(
                               height: 1,
                               indent: 12,
                               endIndent: 12,
@@ -299,7 +407,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       },
                     ),
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 12,
                       endIndent: 12,
@@ -316,7 +424,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       },
                     ),
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 12,
                       endIndent: 12,
@@ -333,7 +441,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       },
                     ),
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 12,
                       endIndent: 12,
@@ -350,7 +458,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       },
                     ),
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 12,
                       endIndent: 12,
@@ -367,27 +475,38 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       },
                     ),
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 12,
                       endIndent: 12,
                       color: RatnexColors.hairline,
                     ),
-                    _ProfileRow(
-                      icon: Icons.notifications_outlined,
-                      title: 'Notifications',
-                      onTap: () => _soon(context, 'Notifications'),
+                    StreamBuilder<int>(
+                      stream: NotificationsService.instance.watchUnreadCount(),
+                      builder: (context, snap) {
+                        final unread = snap.data ?? 0;
+                        return _ProfileRow(
+                          icon: Icons.notifications_outlined,
+                          title: 'Reminders',
+                          subtitle: unread == 0
+                              ? 'Nothing needs chasing'
+                              : '$unread waiting for you',
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RemindersPage(),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const Divider(
-                      height: 1,
-                      indent: 12,
-                      endIndent: 12,
-                      color: RatnexColors.hairline,
-                    ),
+                    _profileDivider(),
                     _ProfileRow(
-                      icon: Icons.lock_outline,
-                      title: 'Privacy & security',
-                      onTap: () => _soon(context, 'Privacy & security'),
+                      icon: Icons.settings_outlined,
+                      title: 'Settings',
+                      subtitle: 'Theme, language, printing, security',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SettingsPage()),
+                      ),
                     ),
                   ],
                 ),
@@ -403,7 +522,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       title: 'About Ratnex',
                       onTap: () => _showAbout(context),
                     ),
-                    const Divider(
+                    Divider(
                       height: 1,
                       indent: 12,
                       endIndent: 12,
@@ -574,7 +693,7 @@ class _ProfileRow extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               size: 18,
               color: RatnexColors.muted,
@@ -585,3 +704,10 @@ class _ProfileRow extends StatelessWidget {
     );
   }
 }
+
+Widget _profileDivider() => Divider(
+      height: 1,
+      indent: 12,
+      endIndent: 12,
+      color: RatnexColors.hairline,
+    );

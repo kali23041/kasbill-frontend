@@ -273,7 +273,7 @@ class _ViewModPageState extends State<ViewModPage> {
                       children: [
                         for (var i = 0; i < mod.items.length; i++) ...[
                           if (i > 0)
-                            const Divider(color: RatnexColors.hairline),
+                            Divider(color: RatnexColors.hairline),
                           _ItemDetail(
                             item: mod.items[i],
                             currency: _currency,
@@ -305,7 +305,7 @@ class _ViewModPageState extends State<ViewModPage> {
                             'Other deduction',
                             '- ${_currency.format(mod.totals.otherDeduction.round())}',
                           ),
-                        const Divider(color: RatnexColors.hairline),
+                        Divider(color: RatnexColors.hairline),
                         _kv(
                           'Paid to customer',
                           _currency.format(mod.totals.purchaseAmount.round()),
@@ -332,7 +332,7 @@ class _ViewModPageState extends State<ViewModPage> {
                       onPressed: _cancel,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: RatnexColors.down,
-                        side: const BorderSide(color: RatnexColors.down),
+                        side: BorderSide(color: RatnexColors.down),
                         minimumSize: const Size.fromHeight(44),
                       ),
                       child: const Text('Cancel purchase'),
@@ -401,7 +401,7 @@ class _ItemDetail extends StatelessWidget {
                   ? Image.memory(thumb, fit: BoxFit.cover)
                   : Container(
                       color: RatnexColors.goldSoft,
-                      child: const Icon(
+                      child: Icon(
                         Icons.diamond_outlined,
                         color: RatnexColors.gold,
                       ),

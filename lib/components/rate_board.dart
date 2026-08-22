@@ -231,7 +231,7 @@ class RatnexRateBoard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           if (loading)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 18),
               child: SizedBox(
                 width: 22,

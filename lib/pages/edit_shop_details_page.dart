@@ -214,11 +214,11 @@ class _EditShopDetailsPageState extends State<EditShopDetailsPage> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -353,7 +353,7 @@ class _EditShopDetailsPageState extends State<EditShopDetailsPage> {
                                     ),
                                     clipBehavior: Clip.antiAlias,
                                     child: _pickingLogo
-                                        ? const Center(
+                                        ? Center(
                                             child: CircularProgressIndicator(
                                               color: RatnexColors.gold,
                                             ),
@@ -363,7 +363,7 @@ class _EditShopDetailsPageState extends State<EditShopDetailsPage> {
                                                 logoBytes,
                                                 fit: BoxFit.cover,
                                               )
-                                            : const Column(
+                                            : Column(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.center,
                                                 children: [

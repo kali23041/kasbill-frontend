@@ -3,9 +3,12 @@ import 'package:intl/intl.dart';
 
 import '../components/ratnex_page_scaffold.dart';
 import '../services/shop_rates_service.dart';
+import '../services/shop_settings_service.dart';
 import '../services/shop_stock_service.dart';
 import '../services/stock_image_helper.dart';
 import '../theme/ratnex_theme.dart';
+import '../widgets/barcode_scan_sheet.dart';
+import '../widgets/ratnex_ui.dart';
 import 'add_stock_item_page.dart';
 
 class StockPage extends StatefulWidget {
@@ -27,33 +30,84 @@ class _StockPageState extends State<StockPage> {
   /// Default to grid; toggle in header switches list ↔ grid.
   bool _isGridView = true;
 
-  Future<void> _confirmDelete(StockItem item) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete item?'),
-        content: Text('Remove “${item.name}” from stock?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Delete',
-              style: RatnexTheme.label(
-                size: 13,
-                weight: FontWeight.w700,
-                color: RatnexColors.down,
-              ),
-            ),
-          ),
-        ],
-      ),
+  final _search = TextEditingController();
+  final _settings = ShopSettingsService();
+  String _query = '';
+  String _filter = 'all';
+  int _deadStockDays = ShopSettings.defaults.deadStockDays;
+
+  @override
+  void initState() {
+    super.initState();
+    _settings.getSettings().then((s) {
+      if (mounted) setState(() => _deadStockDays = s.deadStockDays);
+    }).catchError((_) {});
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  bool _isDead(StockItem item) {
+    if (item.status == 'sold' || item.quantity <= 0) return false;
+    final since = item.updatedAt ?? item.createdAt;
+    if (since == null) return false;
+    return DateTime.now().difference(since).inDays >= _deadStockDays;
+  }
+
+  bool _matches(StockItem item) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return item.name.toLowerCase().contains(q) ||
+        (item.sku ?? '').toLowerCase().contains(q) ||
+        (item.huid ?? '').toLowerCase().contains(q) ||
+        (item.barcode ?? '').toLowerCase().contains(q) ||
+        item.categoryName.toLowerCase().contains(q) ||
+        item.metalLabel.toLowerCase().contains(q);
+  }
+
+  /// Scans a tag and jumps straight to the item, so the counter can answer
+  /// "what is this piece and what does it cost?" in one move.
+  Future<void> _scan(List<StockItem> items) async {
+    final code = await showBarcodeScanner(
+      context,
+      title: 'Scan a tag',
+      hint: 'Scan to open the item, or to filter the list',
     );
-    if (ok == true) {
+    if (code == null || !mounted) return;
+
+    final needle = code.trim().toLowerCase();
+    for (final item in items) {
+      if ((item.barcode ?? '').trim().toLowerCase() == needle ||
+          (item.sku ?? '').trim().toLowerCase() == needle ||
+          (item.huid ?? '').trim().toLowerCase() == needle) {
+        _openItem(item);
+        return;
+      }
+    }
+    setState(() {
+      _search.text = code;
+      _query = code;
+      _filter = 'all';
+    });
+    RatnexSnack.show(context, 'No item carries the code $code');
+  }
+
+  /// Deletes straight away and offers Undo — faster than a confirm dialog and
+  /// just as safe, because the item is restored verbatim.
+  Future<void> _confirmDelete(StockItem item) async {
+    try {
       await _stockService.deleteItem(item.id);
+      if (!mounted) return;
+      RatnexSnack.undoable(
+        context,
+        message: '${item.name} removed from stock',
+        onUndo: () => _stockService.saveItem(item, id: item.id),
+      );
+    } catch (e) {
+      if (mounted) RatnexSnack.error(context, 'Could not delete: $e');
     }
   }
 
@@ -87,7 +141,16 @@ class _StockPageState extends State<StockPage> {
           builder: (context, snap) {
             final items = snap.data ?? const <StockItem>[];
             final lowCount = items.where((i) => i.isLow).length;
+            final deadItems = items.where(_isDead).toList();
             final portfolio = StockValuation.portfolio(items, metalsById);
+
+            var visible = switch (_filter) {
+              'low' => items.where((i) => i.isLow).toList(),
+              'dead' => deadItems,
+              'sold' => items.where((i) => i.status == 'sold').toList(),
+              _ => items.where((i) => i.status != 'sold').toList(),
+            };
+            visible = visible.where(_matches).toList();
 
             return RatnexPageScaffold(
               title: 'Stock',
@@ -129,6 +192,41 @@ class _StockPageState extends State<StockPage> {
                     ready: snap.hasData,
                   ),
                   const SizedBox(height: 16),
+                  RatnexSearchField(
+                    hint: 'Search name, SKU, HUID or barcode',
+                    controller: _search,
+                    onChanged: (v) => setState(() => _query = v),
+                    onScan: () => _scan(items),
+                  ),
+                  const SizedBox(height: 10),
+                  RatnexFilterChips(
+                    selected: _filter,
+                    options: [
+                      (
+                        value: 'all',
+                        label: 'In stock',
+                        count: items.where((i) => i.status != 'sold').length
+                      ),
+                      (value: 'low', label: 'Low', count: lowCount),
+                      (value: 'dead', label: 'Dead', count: deadItems.length),
+                      (
+                        value: 'sold',
+                        label: 'Sold',
+                        count: items.where((i) => i.status == 'sold').length
+                      ),
+                    ],
+                    onSelected: (v) => setState(() => _filter = v),
+                  ),
+                  if (_filter == 'dead' && deadItems.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    RatnexNotice(
+                      message:
+                          '${deadItems.length} items have not moved in $_deadStockDays days. That capital is sitting still — consider a promotion or melting them down.',
+                      color: RatnexColors.warn,
+                      icon: Icons.hourglass_bottom,
+                    ),
+                  ],
+                  const SizedBox(height: 14),
                   RatnexSectionLabel(
                     text: _isGridView ? 'Inventory grid' : 'Inventory list',
                   ),
@@ -144,47 +242,45 @@ class _StockPageState extends State<StockPage> {
                       ),
                     )
                   else if (!snap.hasData)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: RatnexColors.gold,
+                    const RatnexListSkeleton()
+                  else if (items.isEmpty)
+                    RatnexEmptyState(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'No stock items yet',
+                      message:
+                          'Add metals and categories in Profile first, then create stock items so you can bill them in one tap.',
+                      actionLabel: 'Add stock item',
+                      onAction: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AddStockItemPage(),
                         ),
                       ),
                     )
-                  else if (items.isEmpty)
-                    RatnexPanel(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            const Icon(
-                              Icons.inventory_2_outlined,
-                              size: 32,
-                              color: RatnexColors.gold,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'No stock items yet',
-                              style: RatnexTheme.label(
-                                size: 15,
-                                weight: FontWeight.w700,
-                                color: RatnexColors.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Add metals and categories in Profile first, then create stock items for billing.',
-                              textAlign: TextAlign.center,
-                              style: RatnexTheme.label(size: 13),
-                            ),
-                          ],
-                        ),
-                      ),
+                  else if (visible.isEmpty)
+                    RatnexEmptyState(
+                      icon: _filter == 'dead'
+                          ? Icons.check_circle_outline
+                          : Icons.search_off,
+                      title: _filter == 'dead'
+                          ? 'No dead stock'
+                          : 'Nothing matches',
+                      message: _filter == 'dead'
+                          ? 'Everything has moved within the last $_deadStockDays days.'
+                          : 'Try a different name, SKU or filter.',
+                      actionLabel: _query.isEmpty ? null : 'Clear search',
+                      onAction: _query.isEmpty
+                          ? null
+                          : () {
+                              _search.clear();
+                              setState(() {
+                                _query = '';
+                                _filter = 'all';
+                              });
+                            },
                     )
                   else if (_isGridView)
                     _StockGrid(
-                      items: items,
+                      items: visible,
                       metalsById: metalsById,
                       currency: _currency,
                       onOpen: _openItem,
@@ -192,7 +288,7 @@ class _StockPageState extends State<StockPage> {
                     )
                   else
                     _StockList(
-                      items: items,
+                      items: visible,
                       metalsById: metalsById,
                       currency: _currency,
                       onOpen: _openItem,
@@ -474,7 +570,7 @@ class _StockGrid extends StatelessWidget {
                               ? Image.memory(thumb, fit: BoxFit.cover)
                               : Container(
                                   color: RatnexColors.goldSoft,
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.diamond_outlined,
                                     color: RatnexColors.gold,
                                     size: 36,
@@ -490,7 +586,7 @@ class _StockGrid extends StatelessWidget {
                             child: InkWell(
                               customBorder: const CircleBorder(),
                               onTap: () => onDelete(item),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.all(6),
                                 child: Icon(
                                   Icons.delete_outline,
@@ -656,7 +752,7 @@ class _StockList extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(
+          Divider(
             height: 1,
             thickness: 1,
             color: RatnexColors.hairline,
@@ -692,7 +788,7 @@ class _StockList extends StatelessWidget {
                           clipBehavior: Clip.antiAlias,
                           child: thumb != null
                               ? Image.memory(thumb, fit: BoxFit.cover)
-                              : const Icon(
+                              : Icon(
                                   Icons.diamond_outlined,
                                   size: 18,
                                   color: RatnexColors.gold,
@@ -751,7 +847,7 @@ class _StockList extends StatelessWidget {
                                   minHeight: 32,
                                 ),
                                 onPressed: () => onDelete(item),
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.delete_outline,
                                   size: 18,
                                   color: RatnexColors.muted,
@@ -765,7 +861,7 @@ class _StockList extends StatelessWidget {
                   ),
                 ),
                 if (index != items.length - 1)
-                  const Divider(
+                  Divider(
                     height: 1,
                     thickness: 1,
                     indent: 12,

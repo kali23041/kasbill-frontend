@@ -144,20 +144,21 @@ class RatnexSectionLabel extends StatelessWidget {
 
 class RatnexHeaderChip extends StatelessWidget {
   final String label;
-  final Color color;
+  final Color? color;
   final IconData? icon;
   final VoidCallback? onTap;
 
   const RatnexHeaderChip({
     super.key,
     required this.label,
-    this.color = RatnexColors.up,
+    this.color,
     this.icon,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? RatnexColors.up;
     return GestureDetector(
       onTap: onTap,
       child: Container(

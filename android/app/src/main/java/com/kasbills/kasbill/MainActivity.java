@@ -1,6 +1,11 @@
 package com.kasbills.kasbill;
 
-import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.android.FlutterFragmentActivity;
 
-public class MainActivity extends FlutterActivity {
+/**
+ * FlutterFragmentActivity (not FlutterActivity) is required by local_auth:
+ * BiometricPrompt attaches to a FragmentActivity. App lock silently fails
+ * without this.
+ */
+public class MainActivity extends FlutterFragmentActivity {
 }

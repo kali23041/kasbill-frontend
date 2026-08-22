@@ -12,8 +12,11 @@ import '../services/shop_girvi_service.dart';
 import '../services/shop_gst_service.dart';
 import '../services/shop_profile_service.dart';
 import '../services/shop_rates_service.dart';
+import '../services/shop_settings_service.dart';
 import '../services/stock_image_helper.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
+import '../widgets/ratnex_ui.dart';
 import 'girvi_saved_page.dart';
 
 class CreateGirviPage extends StatefulWidget {
@@ -45,6 +48,7 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
   final _rateCtrl = TextEditingController(text: '2');
   final _tenureCtrl = TextEditingController(text: '6');
   final _notesCtrl = TextEditingController();
+  final _idProofCtrl = TextEditingController();
 
   final List<GirviItem> _items = [];
   List<ShopCustomer> _allCustomers = const [];
@@ -60,6 +64,8 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
   DateTime _startedAt = DateTime.now();
   bool _loanTouched = false;
   String _disbursementMode = 'cash';
+  String? _idProofType;
+  bool _requireKyc = true;
 
   static const _disburseModes = [
     ('cash', 'Cash'),
@@ -73,6 +79,9 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
   @override
   void initState() {
     super.initState();
+    ShopSettingsService().getSettings().then((settings) {
+      if (mounted) setState(() => _requireKyc = settings.requireKycOnGirvi);
+    }).catchError((_) {});
     final e = widget.existing;
     if (e != null) {
       _customerName.text = e.customer.name;
@@ -85,6 +94,8 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
       _notesCtrl.text = e.notes ?? '';
       _startedAt = e.startedAt;
       _disbursementMode = e.disbursementMode;
+      _idProofType = e.idProofType;
+      _idProofCtrl.text = e.idProofNumber ?? '';
       _loanTouched = true;
       _showCustomerMore = e.customer.address?.isNotEmpty ?? false;
       _showNotes = e.notes?.isNotEmpty ?? false;
@@ -118,6 +129,7 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
     _rateCtrl.dispose();
     _tenureCtrl.dispose();
     _notesCtrl.dispose();
+    _idProofCtrl.dispose();
     super.dispose();
   }
 
@@ -237,6 +249,10 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
         totals: totals,
         payments: widget.existing?.payments ?? const [],
         disbursementMode: _disbursementMode,
+        idProofType: _idProofType,
+        idProofNumber: _idProofCtrl.text.trim().isEmpty
+            ? null
+            : _idProofCtrl.text.trim().toUpperCase(),
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         shopSnapshot: BillShopSnapshot.fromProfile(
           profile,
@@ -297,11 +313,11 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -408,6 +424,82 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
                                 setState(() => _suggestField = null),
                           ),
                         ],
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.badge_outlined,
+                              size: 15,
+                              color: RatnexColors.muted,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'ID PROOF (KYC)',
+                              style: RatnexTheme.label(
+                                size: 10.5,
+                                weight: FontWeight.w700,
+                              ).copyWith(letterSpacing: 0.5),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final t in const [
+                              ('aadhaar', 'Aadhaar'),
+                              ('pan', 'PAN'),
+                              ('voter', 'Voter ID'),
+                              ('driving', 'Driving licence'),
+                              ('passport', 'Passport'),
+                            ])
+                              ChoiceChip(
+                                label: Text(t.$2),
+                                selected: _idProofType == t.$1,
+                                onSelected: (_) => setState(
+                                  () => _idProofType =
+                                      _idProofType == t.$1 ? null : t.$1,
+                                ),
+                                selectedColor: RatnexColors.ink,
+                                labelStyle: RatnexTheme.label(
+                                  size: 11.5,
+                                  weight: FontWeight.w600,
+                                  color: _idProofType == t.$1
+                                      ? Colors.white
+                                      : RatnexColors.ink,
+                                ),
+                                showCheckmark: false,
+                              ),
+                          ],
+                        ),
+                        if (_idProofType != null) ...[
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _idProofCtrl,
+                            textCapitalization: TextCapitalization.characters,
+                            onChanged: (_) => setState(() {}),
+                            decoration: _dec(
+                              _idProofType == 'pan'
+                                  ? 'PAN (ABCDE1234F)'
+                                  : 'ID number',
+                            ).copyWith(
+                              errorText: _idProofType == 'pan'
+                                  ? RatnexValidate.panError(_idProofCtrl.text)
+                                  : null,
+                            ),
+                            style: _fs(),
+                          ),
+                        ],
+                        if (_requireKyc && _idProofType == null) ...[
+                          const SizedBox(height: 10),
+                          RatnexNotice(
+                            message:
+                                'Pawn lending is regulated. Record an ID proof for the borrower before handing over money.',
+                            color: RatnexColors.warn,
+                            icon: Icons.gavel_outlined,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -423,7 +515,7 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
                             children: [
                               for (var i = 0; i < _items.length; i++) ...[
                                 if (i > 0)
-                                  const Divider(color: RatnexColors.hairline),
+                                  Divider(color: RatnexColors.hairline),
                                 _ItemRow(
                                   item: _items[i],
                                   currency: _currency,
@@ -541,7 +633,7 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
                           },
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.calendar_today_outlined,
                                 size: 16,
                                 color: RatnexColors.muted,
@@ -586,7 +678,7 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
                         _totalRow('Appraisal', totals.appraisalValue),
                         _totalRow('Loan given', totals.loanAmount),
                         _totalRow('Interest till due', totals.interestTillDue),
-                        const Divider(color: RatnexColors.hairline),
+                        Divider(color: RatnexColors.hairline),
                         _totalRow('Amount due', totals.amountDue, bold: true),
                       ],
                     ),
@@ -598,7 +690,7 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: RatnexColors.panel,
                   border: Border(
                     top: BorderSide(color: RatnexColors.hairline),
@@ -640,7 +732,7 @@ class _CreateGirviPageState extends State<CreateGirviPage> {
       child: Column(
         children: [
           for (var i = 0; i < list.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: RatnexColors.hairline),
+            if (i > 0) Divider(height: 1, color: RatnexColors.hairline),
             ListTile(
               dense: true,
               title: Text(
@@ -782,7 +874,7 @@ class _ItemRow extends StatelessWidget {
                   ? Image.memory(thumb, fit: BoxFit.cover)
                   : Container(
                       color: RatnexColors.goldSoft,
-                      child: const Icon(
+                      child: Icon(
                         Icons.diamond_outlined,
                         color: RatnexColors.gold,
                       ),
@@ -914,11 +1006,11 @@ class _AddGirviItemSheetState extends State<_AddGirviItemSheet> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -991,7 +1083,7 @@ class _AddGirviItemSheetState extends State<_AddGirviItemSheet> {
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.add_a_photo_outlined,
                                       color: RatnexColors.gold,
                                       size: 32,

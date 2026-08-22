@@ -6,7 +6,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../utils/ratnex_format.dart';
 import 'shop_bills_service.dart';
+import 'shop_settings_service.dart';
 
 enum BillPrintFormat { thermal58, thermal80, a4 }
 
@@ -47,10 +49,24 @@ class BillPdfService {
     }
   }
 
+  /// Maps the shop's saved paper preference to a print format.
+  static BillPrintFormat formatFromSettings(String printerFormat) {
+    switch (printerFormat) {
+      case 'thermal80':
+        return BillPrintFormat.thermal80;
+      case 'thermal58':
+        return BillPrintFormat.thermal58;
+      default:
+        return BillPrintFormat.a4;
+    }
+  }
+
   static Future<Uint8List> buildPdf(
     ShopBill bill,
-    BillPrintFormat format,
-  ) async {
+    BillPrintFormat format, {
+    ShopSettings? settings,
+  }) async {
+    final resolved = settings ?? await _loadSettings();
     final doc = pw.Document();
     final pageFormat = _pageFormat(format);
     final isThermal = format != BillPrintFormat.a4;
@@ -62,14 +78,27 @@ class BillPdfService {
         pageFormat: pageFormat,
         build: (context) {
           if (isThermal) {
-            return _thermalBody(bill, dateStr, format == BillPrintFormat.thermal58);
+            return _thermalBody(
+              bill,
+              dateStr,
+              format == BillPrintFormat.thermal58,
+              resolved,
+            );
           }
-          return _a4Body(bill, dateStr);
+          return _a4Body(bill, dateStr, resolved);
         },
       ),
     );
 
     return doc.save();
+  }
+
+  static Future<ShopSettings> _loadSettings() async {
+    try {
+      return await ShopSettingsService().getSettings();
+    } catch (_) {
+      return ShopSettings.defaults;
+    }
   }
 
   static Future<void> printBill(ShopBill bill, BillPrintFormat format) async {
@@ -88,8 +117,55 @@ class BillPdfService {
     );
   }
 
-  static pw.Widget _thermalBody(ShopBill bill, String dateStr, bool narrow) {
+  /// Grand total after the shop's round-off preference, plus the adjustment
+  /// that was applied so the invoice can show it as its own line.
+  static ({double total, double adjustment}) _grandTotal(
+    ShopBill bill,
+    ShopSettings settings,
+  ) {
+    final payable = bill.totals.netPayable;
+    if (!settings.roundOffTotals) {
+      return (total: payable, adjustment: 0);
+    }
+    final r = RatnexFormat.roundOff(payable);
+    return (total: r.rounded, adjustment: r.adjustment);
+  }
+
+  /// HSN-wise taxable value and tax — a legally required table on GST
+  /// invoices, and absent from most jewellery apps.
+  static List<List<String>> _hsnRows(ShopBill bill) {
+    final agg = <String, ({double weight, double taxable, double tax})>{};
+    for (final i in bill.items) {
+      final hsn = RatnexHsn.forMetalType(i.metalLabel, categoryName: i.category);
+      final prev = agg[hsn];
+      agg[hsn] = (
+        weight: (prev?.weight ?? 0) + i.netWeight * i.qty,
+        taxable: (prev?.taxable ?? 0) + i.taxableAmount,
+        tax: (prev?.tax ?? 0) + i.gstAmount,
+      );
+    }
+    return agg.entries
+        .map(
+          (e) => [
+            e.key,
+            e.value.weight.toStringAsFixed(3),
+            _currency.format(e.value.taxable.round()),
+            _currency.format((e.value.tax / 2).round()),
+            _currency.format((e.value.tax / 2).round()),
+            _currency.format(e.value.tax.round()),
+          ],
+        )
+        .toList();
+  }
+
+  static pw.Widget _thermalBody(
+    ShopBill bill,
+    String dateStr,
+    bool narrow,
+    ShopSettings settings,
+  ) {
     final fontSize = narrow ? 8.0 : 9.0;
+    final grand = _grandTotal(bill, settings);
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
@@ -190,22 +266,71 @@ class BillPdfService {
         pw.Divider(thickness: 0.6),
         _row('Taxable', _currency.format(bill.totals.taxable.round()), fontSize),
         _row('GST', _currency.format(bill.totals.gst.round()), fontSize),
+        if (bill.totals.hasExchange) ...[
+          _row(
+            'Sale total',
+            _currency.format(bill.totals.grandTotal.round()),
+            fontSize,
+          ),
+          for (final e in bill.exchange)
+            _row(
+              'Old gold ${e.netWeight.toStringAsFixed(3)}g',
+              '- ${_currency.format(e.value.round())}',
+              fontSize - 1,
+            ),
+        ],
+        if (grand.adjustment.abs() >= 0.01)
+          _row(
+            'Round off',
+            '${grand.adjustment >= 0 ? '+' : '-'}${_currency.format(grand.adjustment.abs().round())}',
+            fontSize,
+          ),
         _row(
           'TOTAL',
-          _currency.format(bill.totals.grandTotal.round()),
+          _currency.format(grand.total.round()),
           fontSize + 1,
           bold: true,
         ),
         _row('Paid', _currency.format(bill.totals.paidAmount.round()), fontSize),
         _row('Balance', _currency.format(bill.totals.balance.round()), fontSize),
+        if (settings.showAmountInWords) ...[
+          pw.SizedBox(height: 3),
+          pw.Text(
+            RatnexFormat.amountInWords(grand.total),
+            style: pw.TextStyle(fontSize: fontSize - 1.5),
+          ),
+        ],
         pw.SizedBox(height: 4),
         pw.Text(
           'Status: ${bill.statusLabel}${bill.paymentMode != null ? ' · ${bill.paymentMode}' : ''}',
           style: pw.TextStyle(fontSize: fontSize - 1),
         ),
+        if (settings.showHsnSummary && bill.totals.gst > 0) ...[
+          pw.SizedBox(height: 5),
+          pw.Divider(thickness: 0.4),
+          pw.Text(
+            'HSN summary',
+            style: pw.TextStyle(
+              fontSize: fontSize - 1,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          for (final r in _hsnRows(bill))
+            _row('HSN ${r[0]} · ${r[1]}g', r[5], fontSize - 1.5),
+        ],
+        if (settings.invoiceTerms != null &&
+            settings.invoiceTerms!.trim().isNotEmpty) ...[
+          pw.SizedBox(height: 5),
+          pw.Text(
+            settings.invoiceTerms!.trim(),
+            style: pw.TextStyle(fontSize: fontSize - 2),
+          ),
+        ],
         pw.SizedBox(height: 8),
         pw.Text(
-          'Thank you',
+          settings.invoiceFooter?.trim().isNotEmpty == true
+              ? settings.invoiceFooter!.trim()
+              : 'Thank you',
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(fontSize: fontSize),
         ),
@@ -213,7 +338,12 @@ class BillPdfService {
     );
   }
 
-  static pw.Widget _a4Body(ShopBill bill, String dateStr) {
+  static pw.Widget _a4Body(
+    ShopBill bill,
+    String dateStr,
+    ShopSettings settings,
+  ) {
+    final grand = _grandTotal(bill, settings);
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
@@ -350,10 +480,28 @@ class BillPdfService {
               children: [
                 _row('Taxable', _currency.format(bill.totals.taxable.round()), 11),
                 _row('GST', _currency.format(bill.totals.gst.round()), 11),
+                if (bill.totals.hasExchange) ...[
+                  _row(
+                    'Sale total',
+                    _currency.format(bill.totals.grandTotal.round()),
+                    11,
+                  ),
+                  _row(
+                    'Old gold credit',
+                    '- ${_currency.format(bill.totals.exchangeValue.round())}',
+                    11,
+                  ),
+                ],
+                if (grand.adjustment.abs() >= 0.01)
+                  _row(
+                    'Round off',
+                    '${grand.adjustment >= 0 ? '+' : '-'}${_currency.format(grand.adjustment.abs().round())}',
+                    11,
+                  ),
                 pw.Divider(),
                 _row(
                   'Grand Total',
-                  _currency.format(bill.totals.grandTotal.round()),
+                  _currency.format(grand.total.round()),
                   12,
                   bold: true,
                 ),
@@ -368,6 +516,90 @@ class BillPdfService {
             ),
           ),
         ),
+        if (bill.exchange.isNotEmpty) ...[
+          pw.SizedBox(height: 14),
+          pw.Text(
+            'Old Gold Taken In',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 5),
+          pw.TableHelper.fromTextArray(
+            headers: const [
+              'Description',
+              'Gross g',
+              'Net g',
+              'Rate',
+              'Less %',
+              'Credit',
+            ],
+            data: [
+              for (final e in bill.exchange)
+                [
+                  e.name,
+                  e.grossWeight.toStringAsFixed(3),
+                  e.netWeight.toStringAsFixed(3),
+                  _currency.format(e.ratePerGram.round()),
+                  e.deductionPercent.toStringAsFixed(1),
+                  _currency.format(e.value.round()),
+                ],
+            ],
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 9,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+            cellAlignments: {
+              1: pw.Alignment.centerRight,
+              2: pw.Alignment.centerRight,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.centerRight,
+              5: pw.Alignment.centerRight,
+            },
+          ),
+        ],
+        if (settings.showAmountInWords) ...[
+          pw.SizedBox(height: 8),
+          pw.Text(
+            'Amount in words: ${RatnexFormat.amountInWords(grand.total)}',
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ],
+        if (settings.showHsnSummary && bill.items.isNotEmpty) ...[
+          pw.SizedBox(height: 14),
+          pw.Text(
+            'HSN Summary',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 5),
+          pw.TableHelper.fromTextArray(
+            headers: const [
+              'HSN',
+              'Net g',
+              'Taxable',
+              'CGST',
+              'SGST',
+              'Total Tax',
+            ],
+            data: _hsnRows(bill),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 9,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+            cellAlignments: {
+              1: pw.Alignment.centerRight,
+              2: pw.Alignment.centerRight,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.centerRight,
+              5: pw.Alignment.centerRight,
+            },
+          ),
+        ],
         if (bill.paymentMode != null) ...[
           pw.SizedBox(height: 8),
           pw.Text('Payment mode: ${bill.paymentMode}'),
@@ -376,9 +608,23 @@ class BillPdfService {
           pw.SizedBox(height: 8),
           pw.Text('Notes: ${bill.notes}'),
         ],
+        if (settings.invoiceTerms != null &&
+            settings.invoiceTerms!.trim().isNotEmpty) ...[
+          pw.SizedBox(height: 12),
+          pw.Text(
+            'Terms & Conditions',
+            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.Text(
+            settings.invoiceTerms!.trim(),
+            style: const pw.TextStyle(fontSize: 8),
+          ),
+        ],
         pw.Spacer(),
         pw.Text(
-          'Thank you for your business.',
+          settings.invoiceFooter?.trim().isNotEmpty == true
+              ? settings.invoiceFooter!.trim()
+              : 'Thank you for your business.',
           textAlign: pw.TextAlign.center,
         ),
       ],

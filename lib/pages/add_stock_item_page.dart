@@ -7,9 +7,13 @@ import 'package:intl/intl.dart';
 import '../services/shop_categories_service.dart';
 import '../services/shop_gst_service.dart';
 import '../services/shop_rates_service.dart';
+import '../services/shop_settings_service.dart';
 import '../services/shop_stock_service.dart';
 import '../services/stock_image_helper.dart';
 import '../theme/ratnex_theme.dart';
+import '../utils/ratnex_format.dart';
+import '../widgets/barcode_scan_sheet.dart';
+import '../widgets/ratnex_ui.dart';
 
 class AddStockItemPage extends StatefulWidget {
   final StockItem? existing;
@@ -222,7 +226,7 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
             ),
             if (_imageBase64 != null)
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: RatnexColors.down),
+                leading: Icon(Icons.delete_outline, color: RatnexColors.down),
                 title: const Text('Remove photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -240,6 +244,31 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
 
   double? _parse(TextEditingController c) =>
       double.tryParse(c.text.trim().replaceAll(',', ''));
+
+  /// Returns the name of another stock item already carrying [huid].
+  Future<String?> _findDuplicateHuid(String huid) async {
+    try {
+      final items = await ShopStockService().watchStock().first;
+      for (final item in items) {
+        if (item.id == widget.existing?.id) continue;
+        if ((item.huid ?? '').trim().toUpperCase() == huid) return item.name;
+      }
+    } catch (_) {
+      // A failed lookup should never block saving stock.
+    }
+    return null;
+  }
+
+  Future<void> _scanBarcodeIntoField() async {
+    final code = await showBarcodeScanner(
+      context,
+      title: 'Scan barcode',
+      hint: 'Scan the printed tag to attach its code to this item',
+    );
+    if (code == null || !mounted) return;
+    setState(() => _barcodeCtrl.text = code);
+    RatnexSnack.success(context, 'Barcode attached');
+  }
 
   Future<void> _save() async {
     final name = _nameCtrl.text.trim();
@@ -271,6 +300,54 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
     if (net > gross) {
       _toast('Net weight cannot exceed gross weight');
       return;
+    }
+
+    // Hallmarking is mandatory, so a malformed or reused HUID is worth
+    // catching at the counter rather than during an inspection.
+    final huid = _huidCtrl.text.trim().toUpperCase();
+    if (huid.isNotEmpty) {
+      final settings = await ShopSettingsService().getSettings();
+      if (settings.validateHuid && !RatnexValidate.isHuid(huid)) {
+        _toast('HUID must be exactly 6 letters or digits');
+        return;
+      }
+      final duplicate = await _findDuplicateHuid(huid);
+      if (duplicate != null) {
+        if (!mounted) return;
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            title: Text('HUID already used', style: RatnexTheme.brand(size: 19)),
+            content: Text(
+              'HUID $huid is already on "$duplicate". A hallmark ID belongs to exactly one piece.',
+              style: RatnexTheme.label(size: 13, color: RatnexColors.ink),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(
+                  'Fix it',
+                  style: RatnexTheme.label(size: 13, weight: FontWeight.w700),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  'Save anyway',
+                  style: RatnexTheme.label(
+                    size: 13,
+                    weight: FontWeight.w700,
+                    color: RatnexColors.down,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        if (proceed != true) return;
+      }
     }
 
     final category = _category;
@@ -372,11 +449,11 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -451,7 +528,7 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
                                 ),
                                 clipBehavior: Clip.antiAlias,
                                 child: _pickingImage
-                                    ? const Center(
+                                    ? Center(
                                         child: CircularProgressIndicator(
                                           color: RatnexColors.gold,
                                         ),
@@ -465,7 +542,7 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
-                                              const Icon(
+                                              Icon(
                                                 Icons.add_a_photo_outlined,
                                                 color: RatnexColors.gold,
                                               ),
@@ -583,7 +660,22 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
                                       TextField(
                                         controller: _huidCtrl,
                                         style: _fieldStyle(),
-                                        decoration: _dec('HUID'),
+                                        maxLength: 6,
+                                        textCapitalization:
+                                            TextCapitalization.characters,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                            RegExp(r'[0-9a-zA-Z]'),
+                                          ),
+                                        ],
+                                        onChanged: (_) => setState(() {}),
+                                        decoration: _dec('6 characters')
+                                            .copyWith(
+                                          counterText: '',
+                                          errorText: RatnexValidate.huidError(
+                                            _huidCtrl.text,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -670,6 +762,16 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
                                           ),
                                         ),
                                       ),
+                                      IconButton(
+                                        tooltip: 'Scan an existing tag',
+                                        onPressed: _scanBarcodeIntoField,
+                                        visualDensity: VisualDensity.compact,
+                                        icon: Icon(
+                                          Icons.qr_code_scanner,
+                                          size: 19,
+                                          color: RatnexColors.gold,
+                                        ),
+                                      ),
                                       if (!_isEdit)
                                         TextButton.icon(
                                           onPressed: () {
@@ -678,7 +780,7 @@ class _AddStockItemPageState extends State<AddStockItemPage> {
                                                   generateStockBarcode();
                                             });
                                           },
-                                          icon: const Icon(
+                                          icon: Icon(
                                             Icons.refresh,
                                             size: 16,
                                             color: RatnexColors.gold,
@@ -1200,7 +1302,7 @@ class _PriceSummaryCard extends StatelessWidget {
           row('Other', breakdown.otherCharge),
           row('Taxable value', breakdown.total),
           if (applyGst) row('GST (${gstPercent % 1 == 0 ? gstPercent.round() : gstPercent}%)', gstAmount),
-          const Divider(height: 16, color: RatnexColors.hairline),
+          Divider(height: 16, color: RatnexColors.hairline),
           row(applyGst ? 'Total (incl. GST)' : 'Total price', total, bold: true),
         ],
       ),

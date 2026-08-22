@@ -223,7 +223,7 @@ class _MetalsDiamondsPageState extends State<MetalsDiamondsPage> {
                               }
                               final items = snap.data;
                               if (items == null) {
-                                return const Padding(
+                                return Padding(
                                   padding: EdgeInsets.all(24),
                                   child: Center(
                                     child: CircularProgressIndicator(
@@ -243,7 +243,7 @@ class _MetalsDiamondsPageState extends State<MetalsDiamondsPage> {
                                   children: [
                                     for (var i = 0; i < items.length; i++) ...[
                                       if (i > 0)
-                                        const Divider(
+                                        Divider(
                                           height: 1,
                                           indent: 12,
                                           endIndent: 12,
@@ -277,7 +277,7 @@ class _MetalsDiamondsPageState extends State<MetalsDiamondsPage> {
                               }
                               final items = snap.data;
                               if (items == null) {
-                                return const Padding(
+                                return Padding(
                                   padding: EdgeInsets.all(24),
                                   child: Center(
                                     child: CircularProgressIndicator(
@@ -297,7 +297,7 @@ class _MetalsDiamondsPageState extends State<MetalsDiamondsPage> {
                                   children: [
                                     for (var i = 0; i < items.length; i++) ...[
                                       if (i > 0)
-                                        const Divider(
+                                        Divider(
                                           height: 1,
                                           indent: 12,
                                           endIndent: 12,
@@ -526,7 +526,7 @@ class _DiamondRow extends StatelessWidget {
                 color: RatnexColors.goldSoft,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.diamond_outlined,
                 size: 18,
                 color: RatnexColors.gold,
@@ -778,11 +778,11 @@ class _AddMetalSheetState extends State<_AddMetalSheet> {
                   fillColor: RatnexColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: RatnexColors.hairline),
+                    borderSide: BorderSide(color: RatnexColors.hairline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: RatnexColors.hairline),
+                    borderSide: BorderSide(color: RatnexColors.hairline),
                   ),
                 ),
               ),
@@ -932,11 +932,11 @@ class _AddMetalSheetState extends State<_AddMetalSheet> {
                 fillColor: RatnexColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: RatnexColors.hairline),
+                  borderSide: BorderSide(color: RatnexColors.hairline),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: RatnexColors.hairline),
+                  borderSide: BorderSide(color: RatnexColors.hairline),
                 ),
               ),
             ),
@@ -1123,11 +1123,11 @@ class _AddDiamondSheetState extends State<_AddDiamondSheet> {
                 fillColor: RatnexColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: RatnexColors.hairline),
+                  borderSide: BorderSide(color: RatnexColors.hairline),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: RatnexColors.hairline),
+                  borderSide: BorderSide(color: RatnexColors.hairline),
                 ),
               ),
             ),

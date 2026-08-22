@@ -325,11 +325,11 @@ class _CreateModPageState extends State<CreateModPage> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -531,7 +531,7 @@ class _CreateModPageState extends State<CreateModPage> {
                             children: [
                               for (var i = 0; i < _items.length; i++) ...[
                                 if (i > 0)
-                                  const Divider(color: RatnexColors.hairline),
+                                  Divider(color: RatnexColors.hairline),
                                 _ModItemRow(
                                   item: _items[i],
                                   currency: _currency,
@@ -790,7 +790,7 @@ class _ModItemRow extends StatelessWidget {
                   ? Image.memory(thumb, fit: BoxFit.cover)
                   : Container(
                       color: RatnexColors.goldSoft,
-                      child: const Icon(
+                      child: Icon(
                         Icons.diamond_outlined,
                         color: RatnexColors.gold,
                       ),
@@ -948,11 +948,11 @@ class _AddModItemSheetState extends State<_AddModItemSheet> {
         fillColor: RatnexColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: RatnexColors.hairline),
+          borderSide: BorderSide(color: RatnexColors.hairline),
         ),
       );
 
@@ -1025,7 +1025,7 @@ class _AddModItemSheetState extends State<_AddModItemSheet> {
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.add_a_photo_outlined,
                                       color: RatnexColors.gold,
                                       size: 32,

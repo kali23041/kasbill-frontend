@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../services/app_prefs_service.dart';
 import '../services/bill_pdf_service.dart';
 import '../services/shop_bills_service.dart';
+import '../services/shop_profile_service.dart';
+import '../services/whatsapp_service.dart';
 import '../theme/ratnex_theme.dart';
+import '../widgets/ratnex_ui.dart';
 import 'create_bill_page.dart';
 import 'view_bill_page.dart';
 
@@ -28,10 +32,37 @@ class _BillSavedPageState extends State<BillSavedPage>
   late final Animation<double> _scale;
   late final Animation<double> _fade;
   late final Animation<double> _checkDraw;
-  BillPrintFormat _shareFormat = BillPrintFormat.thermal80;
+  late BillPrintFormat _shareFormat = BillPdfService.formatFromSettings(
+    AppPrefs.instance.printerFormat.value,
+  );
   bool _busy = false;
+  ShopProfile? _shop;
 
   ShopBill get bill => widget.bill;
+
+  /// Opens WhatsApp with the bill summary ready to send. The shop still taps
+  /// send, so nothing leaves the phone on its own.
+  Future<void> _whatsapp() async {
+    final message = WhatsAppService.billMessage(
+      shopName: _shop?.shopName ?? 'our shop',
+      customerName: bill.customer.name,
+      billNo: bill.billNo,
+      amount: bill.totals.grandTotal,
+      balance: bill.totals.balance,
+      upiId: _shop?.upiId,
+    );
+    final ok = await WhatsAppService.send(bill.customer.phone, message);
+    if (!mounted) return;
+    if (ok) return;
+    if (bill.customer.phone == null || bill.customer.phone!.trim().isEmpty) {
+      RatnexSnack.error(context, 'This bill has no customer phone number');
+      return;
+    }
+    await WhatsAppService.copy(message);
+    if (mounted) {
+      RatnexSnack.show(context, 'WhatsApp unavailable — message copied');
+    }
+  }
 
   @override
   void initState() {
@@ -53,6 +84,9 @@ class _BillSavedPageState extends State<BillSavedPage>
       curve: const Interval(0.35, 1, curve: Curves.easeOutCubic),
     );
     _ctrl.forward();
+    ShopProfileService().watchProfile().first.then((p) {
+      if (mounted) setState(() => _shop = p);
+    }).catchError((_) {});
   }
 
   @override
@@ -184,7 +218,7 @@ class _BillSavedPageState extends State<BillSavedPage>
                             'Status',
                             bill.statusLabel,
                           ),
-                          const Divider(color: RatnexColors.hairline),
+                          Divider(color: RatnexColors.hairline),
                           _summaryRow(
                             'Grand total',
                             currency.format(bill.totals.grandTotal.round()),
@@ -259,6 +293,13 @@ class _BillSavedPageState extends State<BillSavedPage>
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    _ActionButton(
+                      icon: Icons.chat_outlined,
+                      label: 'Send on WhatsApp',
+                      filled: true,
+                      onTap: _busy ? null : _whatsapp,
                     ),
                     const SizedBox(height: 22),
                     Text(
@@ -428,7 +469,7 @@ class _ActionButton extends StatelessWidget {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           foregroundColor: RatnexColors.ink,
-          side: const BorderSide(color: RatnexColors.hairline),
+          side: BorderSide(color: RatnexColors.hairline),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -486,7 +527,7 @@ class _OptionTile extends StatelessWidget {
                 ),
               ),
               subtitle: Text(subtitle, style: RatnexTheme.label(size: 11)),
-              trailing: const Icon(
+              trailing: Icon(
                 Icons.chevron_right,
                 color: RatnexColors.muted,
               ),

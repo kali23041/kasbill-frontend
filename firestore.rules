@@ -1,0 +1,244 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ratnex Firestore rules
+//
+// ⚠️  REVIEW BEFORE DEPLOYING. This project is live and its current rules are
+//     not in this repo. Compare against the rules in the Firebase Console and
+//     merge — do not deploy this file blind, or existing clients may lose
+//     access.
+//
+// Data model (everything a shop owns lives under its own user document):
+//
+//   users/{email}
+//     ├─ bills/{billNo}
+//     ├─ girvi/{girviNo}
+//     ├─ mod/{modNo}
+//     ├─ stock/{id}
+//     ├─ categories/{id}
+//     ├─ customers/{phoneId}
+//     ├─ metals/{id}/history/{day}
+//     ├─ diamonds/{id}
+//     ├─ cashDays/{day}/entries/{id}
+//     ├─ udhaar/{phoneId}/entries/{id}        ← khata
+//     ├─ schemes/{id}/members/{id}/installments/{id}
+//     ├─ repairs/{jobNo}/updates/{id}
+//     ├─ karigars/{id}/issues/{id}
+//     ├─ staff/{staffEmail}
+//     ├─ settings/{docId}
+//     ├─ reminders/{id}
+//     ├─ devices/{fcmToken}
+//     └─ auditLog/{id}
+// ─────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Documents are keyed by the lowercased email, matching AuthHelpers.emailDocId.
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function isOwner(shopEmail) {
+      return signedIn() && myEmail() == shopEmail;
+    }
+
+    function staffDoc(shopEmail) {
+      return get(/databases/$(database)/documents/users/$(shopEmail)/staff/$(myEmail()));
+    }
+
+    function isActiveStaff(shopEmail) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(shopEmail)/staff/$(myEmail()))
+        && staffDoc(shopEmail).data.active == true;
+    }
+
+    function staffCan(shopEmail, permission) {
+      return isActiveStaff(shopEmail)
+        && (staffDoc(shopEmail).data.role == 'owner'
+            || permission in staffDoc(shopEmail).data.permissions);
+    }
+
+    function canRead(shopEmail, permission) {
+      return isOwner(shopEmail) || staffCan(shopEmail, permission);
+    }
+
+    function canWrite(shopEmail, permission) {
+      return isOwner(shopEmail) || staffCan(shopEmail, permission);
+    }
+
+    // Platform admins, flagged by role on their own user document.
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(myEmail()))
+        && get(/databases/$(database)/documents/users/$(myEmail())).data.role.lower() == 'admin';
+    }
+
+    match /users/{shopEmail} {
+      // The shop document holds the plan, GST number and shop profile.
+      // Staff need to read it (shop name goes on every invoice) but must never
+      // change the plan, so writes stay with the owner and platform admins.
+      allow read: if isOwner(shopEmail) || isActiveStaff(shopEmail) || isAdmin();
+      allow create: if isOwner(shopEmail);
+      allow update: if isOwner(shopEmail) || isAdmin();
+      allow delete: if isAdmin();
+
+      match /bills/{billNo} {
+        allow read: if canRead(shopEmail, 'viewBills');
+        allow create: if canWrite(shopEmail, 'createBills');
+        allow update: if canWrite(shopEmail, 'editBills');
+        allow delete: if canWrite(shopEmail, 'deleteBills');
+      }
+
+      match /stock/{itemId} {
+        allow read: if canRead(shopEmail, 'viewStock');
+        allow write: if canWrite(shopEmail, 'editStock');
+      }
+
+      match /girvi/{girviNo} {
+        allow read: if canRead(shopEmail, 'viewGirvi');
+        allow write: if canWrite(shopEmail, 'editGirvi');
+      }
+
+      match /mod/{modNo} {
+        allow read: if canRead(shopEmail, 'viewMod');
+        allow write: if canWrite(shopEmail, 'editMod');
+      }
+
+      // Khata: summary plus its entries subcollection.
+      match /udhaar/{phoneId} {
+        allow read: if canRead(shopEmail, 'viewUdhaar');
+        allow write: if canWrite(shopEmail, 'collectUdhaar');
+
+        match /entries/{entryId} {
+          allow read: if canRead(shopEmail, 'viewUdhaar');
+          allow write: if canWrite(shopEmail, 'collectUdhaar');
+        }
+      }
+
+      match /schemes/{schemeId} {
+        allow read: if canRead(shopEmail, 'viewSchemes');
+        allow write: if canWrite(shopEmail, 'editSchemes');
+
+        match /members/{memberId} {
+          allow read: if canRead(shopEmail, 'viewSchemes');
+          allow write: if canWrite(shopEmail, 'editSchemes');
+
+          match /installments/{installmentId} {
+            allow read: if canRead(shopEmail, 'viewSchemes');
+            allow write: if canWrite(shopEmail, 'editSchemes');
+          }
+        }
+      }
+
+      match /repairs/{jobNo} {
+        allow read: if canRead(shopEmail, 'viewRepairs');
+        allow write: if canWrite(shopEmail, 'editRepairs');
+
+        match /updates/{updateId} {
+          allow read: if canRead(shopEmail, 'viewRepairs');
+          allow write: if canWrite(shopEmail, 'editRepairs');
+        }
+      }
+
+      match /karigars/{karigarId} {
+        allow read: if canRead(shopEmail, 'viewKarigar');
+        allow write: if canWrite(shopEmail, 'editKarigar');
+
+        match /issues/{entryId} {
+          allow read: if canRead(shopEmail, 'viewKarigar');
+          allow write: if canWrite(shopEmail, 'editKarigar');
+        }
+      }
+
+      match /cashDays/{dayId} {
+        allow read: if canRead(shopEmail, 'viewCash');
+        allow write: if canWrite(shopEmail, 'editCash');
+
+        match /entries/{entryId} {
+          allow read: if canRead(shopEmail, 'viewCash');
+          allow write: if canWrite(shopEmail, 'editCash');
+        }
+      }
+
+      match /metals/{metalId} {
+        // Everyone billing needs to read rates; only the owner sets them.
+        allow read: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+        allow write: if canWrite(shopEmail, 'editRates');
+
+        match /history/{dayId} {
+          allow read: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+          allow write: if canWrite(shopEmail, 'editRates');
+        }
+      }
+
+      match /diamonds/{diamondId} {
+        allow read: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+        allow write: if canWrite(shopEmail, 'editRates');
+      }
+
+      match /categories/{categoryId} {
+        allow read: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+        allow write: if canWrite(shopEmail, 'editStock');
+      }
+
+      match /customers/{phoneId} {
+        allow read: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+        // Anyone who can bill also creates customers as a side effect.
+        allow write: if canWrite(shopEmail, 'createBills');
+      }
+
+      match /settings/{docId} {
+        // The invoice counter is bumped by anyone who can raise a bill, so
+        // reads and writes here follow billing rather than settings.
+        allow read: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+        allow write: if isOwner(shopEmail)
+          || staffCan(shopEmail, 'editSettings')
+          || (docId == 'invoiceCounter' && staffCan(shopEmail, 'createBills'));
+      }
+
+      match /staff/{staffEmail} {
+        // A staff member may read their own record (that is how the app
+        // resolves their permissions) but never edit it.
+        allow read: if isOwner(shopEmail)
+          || (signedIn() && myEmail() == staffEmail);
+        allow write: if isOwner(shopEmail);
+        // Exception: the client stamps lastActiveAt on sign-in.
+        allow update: if signedIn()
+          && myEmail() == staffEmail
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['lastActiveAt']);
+      }
+
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+      }
+
+      match /devices/{token} {
+        allow read, write: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+      }
+
+      match /auditLog/{entryId} {
+        // Append-only: nobody edits or deletes history, not even the owner.
+        allow read: if isOwner(shopEmail) || isAdmin();
+        allow create: if isOwner(shopEmail) || isActiveStaff(shopEmail);
+        allow update, delete: if false;
+      }
+
+      // Any subcollection added later stays locked to the owner until it is
+      // given an explicit rule above.
+      match /{other=**} {
+        allow read, write: if isOwner(shopEmail);
+      }
+    }
+
+    // Platform admin console lists every shop.
+    match /users/{shopEmail} {
+      allow list: if isAdmin();
+    }
+  }
+}

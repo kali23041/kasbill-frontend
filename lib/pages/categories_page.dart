@@ -140,7 +140,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         );
                       }
                       if (!snap.hasData) {
-                        return const Center(
+                        return Center(
                           child: CircularProgressIndicator(
                             color: RatnexColors.gold,
                           ),
@@ -157,7 +157,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                 padding: const EdgeInsets.all(20),
                                 child: Column(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.category_outlined,
                                       size: 32,
                                       color: RatnexColors.gold,
@@ -198,7 +198,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                               children: [
                                 for (var i = 0; i < added.length; i++) ...[
                                   if (i > 0)
-                                    const Divider(
+                                    Divider(
                                       height: 1,
                                       indent: 12,
                                       endIndent: 12,
@@ -387,12 +387,12 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide:
-                              const BorderSide(color: RatnexColors.hairline),
+                              BorderSide(color: RatnexColors.hairline),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide:
-                              const BorderSide(color: RatnexColors.hairline),
+                              BorderSide(color: RatnexColors.hairline),
                         ),
                       ),
                       onSubmitted: (_) => _addCustom(),
@@ -556,7 +556,7 @@ class _SuggestionChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (busy)
-                const SizedBox(
+                SizedBox(
                   width: 12,
                   height: 12,
                   child: CircularProgressIndicator(
@@ -567,7 +567,7 @@ class _SuggestionChip extends StatelessWidget {
               else if (selected)
                 const Icon(Icons.check, size: 14, color: Colors.white)
               else
-                const Icon(Icons.add, size: 14, color: RatnexColors.ink),
+                Icon(Icons.add, size: 14, color: RatnexColors.ink),
               const SizedBox(width: 6),
               Text(
                 label,

@@ -22,7 +22,7 @@ class RatnexBottomNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: RatnexColors.panel,
         border: Border(
           top: BorderSide(color: RatnexColors.hairline, width: 1),

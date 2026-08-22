@@ -41,7 +41,7 @@ class AuthLandingShell extends StatelessWidget {
             bottom: 0,
             child: Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: RatnexColors.panel,
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(28),
@@ -183,7 +183,7 @@ class AuthPillButton extends StatelessWidget {
         onPressed: loading ? null : onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: RatnexColors.ink,
-          side: const BorderSide(color: RatnexColors.ink, width: 1.2),
+          side: BorderSide(color: RatnexColors.ink, width: 1.2),
           shape: const StadiumBorder(),
           backgroundColor: RatnexColors.panel,
         ),
@@ -320,15 +320,15 @@ InputDecoration authFieldDecoration(String label, {Widget? suffix}) {
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: RatnexColors.hairline),
+      borderSide: BorderSide(color: RatnexColors.hairline),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: RatnexColors.hairline),
+      borderSide: BorderSide(color: RatnexColors.hairline),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: RatnexColors.gold, width: 1.4),
+      borderSide: BorderSide(color: RatnexColors.gold, width: 1.4),
     ),
     suffixIcon: suffix,
   );
